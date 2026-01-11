@@ -6,8 +6,8 @@ import type { Note } from '@/lib/types'
 
 interface NoteCardProps {
   note: Note
-  onUpdate: (data: { title: string; content: string; tags: string }) => Promise<void>
-  onDelete: () => Promise<void>
+  onUpdate: (data: { title: string; content: string; tags: string }) => Promise<unknown>
+  onDelete: () => Promise<unknown>
 }
 
 export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {

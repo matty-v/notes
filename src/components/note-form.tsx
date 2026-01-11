@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/tag-input'
 
 interface NoteFormProps {
-  onSubmit: (data: { title: string; content: string; tags: string }) => Promise<void>
+  onSubmit: (data: { title: string; content: string; tags: string }) => Promise<unknown>
   initialValues?: { title: string; content: string; tags: string[] }
   submitLabel?: string
   onCancel?: () => void

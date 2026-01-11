@@ -1,8 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { X } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { useTags } from '@/hooks/use-tags'
-import { cn } from '@/lib/utils'
 
 interface TagInputProps {
   value: string[]
