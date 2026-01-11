@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { db } from '@/lib/db'
 import { queueSync, getPendingCount } from '@/lib/sync'
+import type { Note } from '@/lib/types'
 
 describe('Sync Service', () => {
   beforeEach(async () => {
@@ -25,7 +26,7 @@ describe('Sync Service', () => {
   })
 
   it('should queue a delete operation', async () => {
-    await queueSync('delete', { id: 'note-1' } as any)
+    await queueSync('delete', { id: 'note-1' } as Note)
 
     const pending = await db.pendingSync.toArray()
     expect(pending[0].operation).toBe('delete')
