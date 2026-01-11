@@ -1,0 +1,17 @@
+import Dexie, { type EntityTable } from 'dexie'
+import type { Note, PendingSync } from './types'
+
+export class NotesDB extends Dexie {
+  notes!: EntityTable<Note, 'id'>
+  pendingSync!: EntityTable<PendingSync, 'id'>
+
+  constructor() {
+    super('NotesDB')
+    this.version(1).stores({
+      notes: 'id, title, createdAt, updatedAt',
+      pendingSync: 'id, noteId, operation, timestamp',
+    })
+  }
+}
+
+export const db = new NotesDB()
