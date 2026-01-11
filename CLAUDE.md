@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+Notes App is a Progressive Web Application (PWA) for creating and managing notes with full offline support. Built with React, TypeScript, and Vite, it uses IndexedDB (via Dexie) for local storage and syncs with a cloud backend when online.
+
 ## Build and Development Commands
 
 ```bash
@@ -18,7 +22,7 @@ npm run deploy       # Build and deploy to Firebase
 
 ## Architecture Overview
 
-React SPA with TypeScript, built with Vite. Uses Tailwind CSS for styling with CSS variables for theming.
+Notes App is a React SPA with TypeScript, built with Vite. Uses Tailwind CSS for styling with CSS variables for theming. Features offline-first architecture with IndexedDB for local persistence and service worker for PWA capabilities.
 
 ### Directory Structure
 
