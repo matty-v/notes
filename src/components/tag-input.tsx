@@ -6,10 +6,16 @@ interface TagInputProps {
   value: string[]
   onChange: (tags: string[]) => void
   placeholder?: string
+  pendingInputRef?: React.MutableRefObject<string>
 }
 
-export function TagInput({ value, onChange, placeholder = 'Add tags...' }: TagInputProps) {
+export function TagInput({ value, onChange, placeholder = 'Add tags...', pendingInputRef }: TagInputProps) {
   const [input, setInput] = useState('')
+
+  // Keep parent informed of pending input
+  if (pendingInputRef) {
+    pendingInputRef.current = input
+  }
   const [showSuggestions, setShowSuggestions] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const { tags: allTags } = useTags()

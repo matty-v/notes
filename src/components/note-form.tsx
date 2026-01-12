@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/tag-input'
@@ -20,22 +20,33 @@ export function NoteForm({
   const [content, setContent] = useState(initialValues?.content ?? '')
   const [tags, setTags] = useState<string[]>(initialValues?.tags ?? [])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formKey, setFormKey] = useState(0)
+  const pendingTagRef = useRef('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+
+    // Include any pending tag input
+    let finalTags = [...tags]
+    const pendingTag = pendingTagRef.current.trim().toLowerCase()
+    if (pendingTag && !finalTags.includes(pendingTag)) {
+      finalTags.push(pendingTag)
+    }
 
     setIsSubmitting(true)
     try {
       await onSubmit({
         title: title.trim(),
         content: content.trim(),
-        tags: tags.join(','),
+        tags: finalTags.join(','),
       })
       if (!initialValues) {
         setTitle('')
         setContent('')
         setTags([])
+        pendingTagRef.current = ''
+        setFormKey((k) => k + 1)
       }
     } finally {
       setIsSubmitting(false)
@@ -58,7 +69,7 @@ export function NoteForm({
       />
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <TagInput value={tags} onChange={setTags} />
+          <TagInput key={formKey} value={tags} onChange={setTags} pendingInputRef={pendingTagRef} />
         </div>
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
