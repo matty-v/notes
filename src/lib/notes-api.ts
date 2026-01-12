@@ -1,28 +1,42 @@
-import { SheetsDbClient } from 'sheets-db-client'
+import { SheetsDbClient } from '@/services/sheetsdb'
+import { API_BASE_URL, LOCAL_STORAGE_KEYS } from '@/config/constants'
 
-const SHEETS_API_URL = import.meta.env.VITE_SHEETS_API_URL
-const SPREADSHEET_ID = import.meta.env.VITE_SPREADSHEET_ID
-
-if (!SHEETS_API_URL || !SPREADSHEET_ID) {
-  console.warn('Sheets API not configured - running in offline-only mode')
+function getSpreadsheetId(): string | null {
+  return localStorage.getItem(LOCAL_STORAGE_KEYS.SPREADSHEET_ID)
 }
 
-export const sheetsClient = SHEETS_API_URL && SPREADSHEET_ID
-  ? new SheetsDbClient({
-      baseUrl: SHEETS_API_URL,
-      spreadsheetId: SPREADSHEET_ID,
-    })
-  : null
+function createClient(): SheetsDbClient | null {
+  const spreadsheetId = getSpreadsheetId()
+  if (!spreadsheetId) return null
+
+  return new SheetsDbClient({
+    baseUrl: API_BASE_URL,
+    spreadsheetId,
+  })
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const notesSheet = sheetsClient?.sheet<any>('notes') ?? null
+export function getNotesSheet(): ReturnType<SheetsDbClient['sheet']> | null {
+  const client = createClient()
+  return client?.sheet('notes') ?? null
+}
+
+export function getSheetsClient(): SheetsDbClient | null {
+  return createClient()
+}
 
 export async function isApiAvailable(): Promise<boolean> {
-  if (!sheetsClient) return false
+  const client = createClient()
+  if (!client) return false
+
   try {
-    await sheetsClient.health()
+    await client.health()
     return true
   } catch {
     return false
   }
+}
+
+export function isConfigured(): boolean {
+  return !!getSpreadsheetId()
 }

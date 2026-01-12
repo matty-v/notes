@@ -14,11 +14,13 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const tags = note.tags.split(',').map((t) => t.trim()).filter(Boolean)
-  const date = new Date(note.createdAt).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  })
+  const tags = (note.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
+  const date = note.createdAt
+    ? new Date(note.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
+    : ''
 
   const handleDelete = async () => {
     setIsDeleting(true)

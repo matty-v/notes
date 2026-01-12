@@ -6,13 +6,16 @@ import { NoteForm } from '@/components/note-form'
 import { NoteCard } from '@/components/note-card'
 import { TagFilter } from '@/components/tag-filter'
 import { SyncStatus } from '@/components/sync-status'
+import { SettingsDialog } from '@/components/settings-dialog'
 import { useNotes } from '@/hooks/use-notes'
+import { useSettings } from '@/hooks/use-settings'
 import type { SortOrder } from '@/lib/types'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
+  const { spreadsheetId, connectSpreadsheet, isInitializing, status } = useSettings()
 
   const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
     search,
@@ -24,7 +27,15 @@ export function HomePage() {
     <div className="max-w-2xl mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Notes</h1>
-        <SyncStatus />
+        <div className="flex items-center gap-2">
+          <SyncStatus />
+          <SettingsDialog
+            spreadsheetId={spreadsheetId}
+            onSave={connectSpreadsheet}
+            isSaving={isInitializing}
+            status={status}
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { db } from './db'
-import { notesSheet, isApiAvailable } from './notes-api'
+import { getNotesSheet, isApiAvailable } from './notes-api'
 import type { Note, PendingSync } from './types'
 
 export async function queueSync(
@@ -21,6 +21,7 @@ export async function getPendingCount(): Promise<number> {
 }
 
 export async function processSyncQueue(): Promise<{ success: number; failed: number }> {
+  const notesSheet = getNotesSheet()
   if (!notesSheet || !(await isApiAvailable())) {
     return { success: 0, failed: 0 }
   }
@@ -32,15 +33,19 @@ export async function processSyncQueue(): Promise<{ success: number; failed: num
   for (const item of pending) {
     try {
       if (item.operation === 'create' && item.data) {
-        await notesSheet.createRow(item.data)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await notesSheet.createRow(item.data as any)
       } else if (item.operation === 'update' && item.data) {
-        const rows = await notesSheet.getRows()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows = (await notesSheet.getRows()) as any[]
         const rowIndex = rows.findIndex((r) => r.id === item.noteId)
         if (rowIndex >= 0) {
-          await notesSheet.updateRow(rowIndex + 2, item.data)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await notesSheet.updateRow(rowIndex + 2, item.data as any)
         }
       } else if (item.operation === 'delete') {
-        const rows = await notesSheet.getRows()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows = (await notesSheet.getRows()) as any[]
         const rowIndex = rows.findIndex((r) => r.id === item.noteId)
         if (rowIndex >= 0) {
           await notesSheet.deleteRow(rowIndex + 2)
@@ -58,16 +63,19 @@ export async function processSyncQueue(): Promise<{ success: number; failed: num
 }
 
 export async function pullFromRemote(): Promise<void> {
+  const notesSheet = getNotesSheet()
   if (!notesSheet || !(await isApiAvailable())) {
     return
   }
 
-  const remoteNotes = await notesSheet.getRows()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const remoteNotes = (await notesSheet.getRows()) as any[]
 
   for (const remote of remoteNotes) {
-    const local = await db.notes.get(remote.id)
-    if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
-      await db.notes.put(remote)
+    if (!remote.id) continue
+    const local = await db.notes.get(remote.id as string)
+    if (!local || new Date(remote.updatedAt as string) > new Date(local.updatedAt)) {
+      await db.notes.put(remote as Note)
     }
   }
 }
