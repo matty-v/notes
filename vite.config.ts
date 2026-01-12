@@ -8,13 +8,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'logo.svg'],
       manifest: {
         name: 'Notes',
         short_name: 'Notes',
         description: 'Quick notes with offline support',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#F59E0B',
+        background_color: '#FFFFFF',
         display: 'standalone',
         icons: [
           {
