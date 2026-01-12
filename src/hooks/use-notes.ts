@@ -1,7 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { v4 as uuid } from 'uuid'
 import { db } from '@/lib/db'
-import { queueSync } from '@/lib/sync'
+import { queueSync, pullFromRemote } from '@/lib/sync'
 import type { Note, SortOrder } from '@/lib/types'
 
 interface CreateNoteInput {
@@ -19,6 +20,16 @@ interface UseNotesOptions {
 export function useNotes(options: UseNotesOptions = {}) {
   const queryClient = useQueryClient()
   const { search = '', tagFilter = [], sortOrder = 'newest' } = options
+  const hasFetched = useRef(false)
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
+    pullFromRemote().then(() => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] })
+    })
+  }, [queryClient])
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', search, tagFilter, sortOrder],
