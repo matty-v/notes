@@ -1,5 +1,15 @@
 {
   "projects": {
-    "default": "your-project-id"
-  }
+    "default": "kinetic-object-322814"
+  },
+  "targets": {
+    "kinetic-object-322814": {
+      "hosting": {
+        "matty-notes-pwa": [
+          "matty-notes-pwa"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
