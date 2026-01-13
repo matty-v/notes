@@ -50,7 +50,7 @@ export function TagInput({ value, onChange, placeholder = 'Add tags...', pending
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap gap-1 p-2 border rounded-md bg-background min-h-[42px]">
+      <div className="flex flex-wrap gap-1 p-2 border border-input rounded-md bg-background min-h-[42px]">
         {value.map((tag) => (
           <span
             key={tag}
@@ -78,17 +78,17 @@ export function TagInput({ value, onChange, placeholder = 'Add tags...', pending
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder={value.length === 0 ? placeholder : ''}
-          className="flex-1 min-w-[100px] bg-transparent outline-none text-sm"
+          className="flex-1 min-w-[100px] bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-sm"
         />
       </div>
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md">
+        <div className="absolute z-10 w-full mt-1 bg-popover text-popover-foreground border rounded-md shadow-md">
           {suggestions.slice(0, 5).map((tag) => (
             <button
               key={tag}
               type="button"
               onClick={() => addTag(tag)}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+              className="w-full px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
             >
               {tag}
             </button>

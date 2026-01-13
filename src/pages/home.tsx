@@ -7,6 +7,7 @@ import { NoteCard } from '@/components/note-card'
 import { TagFilter } from '@/components/tag-filter'
 import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import type { SortOrder } from '@/lib/types'
@@ -29,6 +30,7 @@ export function HomePage() {
         <h1 className="text-2xl font-bold">Notes</h1>
         <div className="flex items-center gap-2">
           <SyncStatus />
+          <ThemeToggle />
           <SettingsDialog
             spreadsheetId={spreadsheetId}
             onSave={connectSpreadsheet}
