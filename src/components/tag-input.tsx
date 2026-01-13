@@ -50,17 +50,17 @@ export function TagInput({ value, onChange, placeholder = 'Add tags...', pending
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap gap-1 p-2 border rounded-md bg-background min-h-[42px]">
+      <div className="flex flex-wrap gap-1 p-2 border border-input rounded-md bg-background min-h-[42px]">
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-sm bg-secondary rounded"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-sm bg-secondary text-secondary-foreground rounded"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="hover:text-destructive"
+              className="hover:text-destructive transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -78,17 +78,17 @@ export function TagInput({ value, onChange, placeholder = 'Add tags...', pending
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder={value.length === 0 ? placeholder : ''}
-          className="flex-1 min-w-[100px] bg-transparent outline-none text-sm"
+          className="flex-1 min-w-[100px] bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
         />
       </div>
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-md">
+        <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-md">
           {suggestions.slice(0, 5).map((tag) => (
             <button
               key={tag}
               type="button"
               onClick={() => addTag(tag)}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+              className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               {tag}
             </button>
