@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { Mic, MicOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/tag-input'
+import { useVoiceRecording } from '@/hooks/use-voice-recording'
 
 interface NoteFormProps {
   onSubmit: (data: { title: string; content: string; tags: string }) => Promise<unknown>
@@ -23,9 +25,35 @@ export function NoteForm({
   const [formKey, setFormKey] = useState(0)
   const pendingTagRef = useRef('')
 
+  const { isListening, transcript, error: voiceError, isSupported, startListening, stopListening, resetTranscript } = useVoiceRecording()
+
+  // Append transcript to content when it changes
+  useEffect(() => {
+    if (transcript) {
+      setContent(prev => {
+        const newContent = prev ? `${prev} ${transcript}` : transcript
+        return newContent
+      })
+      resetTranscript()
+    }
+  }, [transcript, resetTranscript])
+
+  const toggleVoiceRecording = () => {
+    if (isListening) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return
+
+    // Stop recording if active
+    if (isListening) {
+      stopListening()
+    }
 
     // Include any pending tag input
     let finalTags = [...tags]
@@ -46,6 +74,7 @@ export function NoteForm({
         setContent('')
         setTags([])
         pendingTagRef.current = ''
+        resetTranscript()
         setFormKey((k) => k + 1)
       }
     } finally {
@@ -61,12 +90,29 @@ export function NoteForm({
         onChange={(e) => setTitle(e.target.value)}
         required
       />
-      <textarea
-        placeholder="Write your note..."
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="w-full min-h-[80px] px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background placeholder:text-muted-foreground"
-      />
+      <div className="relative">
+        <textarea
+          placeholder="Write your note..."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full min-h-[80px] px-3 py-2 pr-12 border border-input rounded-md bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background placeholder:text-muted-foreground"
+        />
+        {isSupported && (
+          <Button
+            type="button"
+            size="icon"
+            variant={isListening ? "default" : "ghost"}
+            onClick={toggleVoiceRecording}
+            className="absolute right-2 top-2"
+            title={isListening ? "Stop recording" : "Start voice recording"}
+          >
+            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+          </Button>
+        )}
+      </div>
+      {voiceError && (
+        <p className="text-sm text-destructive">{voiceError}</p>
+      )}
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <TagInput key={formKey} value={tags} onChange={setTags} pendingInputRef={pendingTagRef} />
