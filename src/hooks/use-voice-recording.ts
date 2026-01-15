@@ -32,10 +32,10 @@ export function useVoiceRecording(options: VoiceRecordingOptions = {}): VoiceRec
 
   // Check browser support
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (SpeechRecognition) {
+    const SpeechRecognitionAPI = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (SpeechRecognitionAPI) {
       setIsSupported(true)
-      recognitionRef.current = new SpeechRecognition()
+      recognitionRef.current = new SpeechRecognitionAPI()
     } else {
       setIsSupported(false)
       setError('Speech recognition is not supported in this browser')
