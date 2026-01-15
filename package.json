@@ -30,7 +30,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
-    "sheets-db-client": "file:../sheets-db-api/sdk",
     "tailwind-merge": "^2.6.0",
     "uuid": "^13.0.0",
     "vite-plugin-pwa": "^1.2.0"
