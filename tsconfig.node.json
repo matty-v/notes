@@ -9,6 +9,7 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "composite": true,
+    "outDir": "./dist-node",
     "emitDeclarationOnly": true,
     "declaration": true,
     "declarationMap": true,
