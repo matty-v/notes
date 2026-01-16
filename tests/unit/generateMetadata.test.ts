@@ -234,6 +234,72 @@ describe('generateMetadata', () => {
     const result = await generateMetadata('Some content')
     expect(result).toBeNull()
   })
+
+  it('should parse JSON wrapped in ```json code blocks', async () => {
+    const mockResponse = {
+      content: [
+        {
+          type: 'text',
+          text: '```json\n{"title": "Test Title", "tags": ["tag1", "tag2"]}\n```',
+        },
+      ],
+    }
+
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    const result = await generateMetadata('Some content')
+    expect(result).toEqual({
+      title: 'Test Title',
+      tags: ['tag1', 'tag2'],
+    })
+  })
+
+  it('should parse JSON wrapped in ``` code blocks without language', async () => {
+    const mockResponse = {
+      content: [
+        {
+          type: 'text',
+          text: '```\n{"title": "Test Title", "tags": ["tag1"]}\n```',
+        },
+      ],
+    }
+
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    const result = await generateMetadata('Some content')
+    expect(result).toEqual({
+      title: 'Test Title',
+      tags: ['tag1'],
+    })
+  })
+
+  it('should handle code blocks with extra whitespace', async () => {
+    const mockResponse = {
+      content: [
+        {
+          type: 'text',
+          text: '  ```json\n{"title": "Whitespace Test", "tags": ["ws"]}\n```  ',
+        },
+      ],
+    }
+
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    const result = await generateMetadata('Some content')
+    expect(result).toEqual({
+      title: 'Whitespace Test',
+      tags: ['ws'],
+    })
+  })
 })
 
 describe('shouldGenerateTitle', () => {
