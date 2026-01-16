@@ -40,6 +40,7 @@ export function HomePage() {
     getScrollElement: () => scrollContainerRef.current,
     estimateSize: () => 120,
     overscan: 5,
+    getItemKey: (index) => notes[index]?.id ?? index,
   })
 
   return (
@@ -108,7 +109,7 @@ export function HomePage() {
           >
             {virtualizer.getVirtualItems().map((virtualRow) => (
               <div
-                key={notes[virtualRow.index].id}
+                key={virtualRow.key}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 style={{
