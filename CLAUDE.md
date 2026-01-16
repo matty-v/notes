@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Notes App is a Progressive Web Application (PWA) for creating and managing notes with full offline support. Built with React, TypeScript, and Vite, it uses IndexedDB (via Dexie) for local storage and syncs with a cloud backend when online.
+Notes App is a Progressive Web Application (PWA) for creating and managing notes with full offline support. Built with React, TypeScript, and Vite, it uses IndexedDB (via Dexie) for local storage and syncs with a Google Sheets backend via SheetsDbClient when online.
 
 ## Build and Development Commands
 
@@ -20,9 +20,40 @@ npm run lint         # ESLint check
 npm run deploy       # Build and deploy to Firebase
 ```
 
+Run a single unit test file:
+```bash
+npx vitest run tests/unit/db.test.ts
+```
+
+Run a single E2E test:
+```bash
+npx playwright test tests/e2e/home.spec.ts
+```
+
 ## Architecture Overview
 
-Notes App is a React SPA with TypeScript, built with Vite. Uses Tailwind CSS for styling with CSS variables for theming. Features offline-first architecture with IndexedDB for local persistence and service worker for PWA capabilities.
+### Offline-First Data Flow
+
+```
+User Action → useNotes hook → IndexedDB (immediate) → queueSync → pendingSync table
+                                                                        ↓
+                                                              processSyncQueue (when online)
+                                                                        ↓
+                                                              SheetsDbClient → Google Sheets API
+```
+
+1. **Local-first writes**: All CRUD operations write to IndexedDB immediately via `db.notes`
+2. **Sync queue**: Operations are queued in `db.pendingSync` table for later sync
+3. **Background sync**: `processSyncQueue()` in `src/lib/sync.ts` pushes pending changes when online
+4. **Pull on load**: `pullFromRemote()` fetches remote changes on app load, merging by `updatedAt` timestamp
+
+### Key Files
+
+- `src/lib/db.ts` - Dexie database schema with `notes` and `pendingSync` tables
+- `src/lib/sync.ts` - Sync queue logic: `queueSync`, `processSyncQueue`, `pullFromRemote`
+- `src/lib/notes-api.ts` - SheetsDbClient initialization and availability checks
+- `src/hooks/use-notes.ts` - TanStack Query hook wrapping all note operations
+- `src/services/sheetsdb/SheetsDbClient.ts` - HTTP client for Google Sheets proxy API
 
 ### Directory Structure
 
@@ -30,23 +61,23 @@ Notes App is a React SPA with TypeScript, built with Vite. Uses Tailwind CSS for
 src/
   components/
     ui/              # Radix + CVA primitives (Button, Input, etc.)
-    layout/          # Layout components (RootLayout)
-  hooks/             # TanStack Query hooks
+    sheets/          # Google Sheets setup wizard and settings
+  hooks/             # TanStack Query hooks (use-notes, use-sync, use-tags, etc.)
   lib/
-    api.ts           # REST API client
-    utils.ts         # Utilities (cn helper)
+    db.ts            # Dexie IndexedDB schema
+    sync.ts          # Offline sync queue logic
+    notes-api.ts     # SheetsDb client setup
+    types.ts         # Shared TypeScript types (Note, PendingSync, etc.)
+  services/sheetsdb/ # SheetsDbClient for Google Sheets API proxy
   pages/             # Route components
-  App.tsx            # Router setup + QueryClient
-  main.tsx           # Entry point
-  index.css          # Tailwind + theme variables
 ```
 
 ### Key Patterns
 
 - **Components**: Radix UI primitives + CVA for variants
 - **Styling**: Tailwind with HSL CSS variables for theming
-- **Data Fetching**: TanStack Query with typed API client
-- **Routing**: React Router v6 with layout routes
+- **Data Fetching**: TanStack Query with IndexedDB as primary source
+- **Routing**: React Router v6
 
 ## Adding New Components
 
@@ -64,31 +95,17 @@ const componentVariants = cva('base-classes', {
 })
 ```
 
-## Adding New API Hooks
-
-Follow the pattern in `src/hooks/use-example.ts`:
-
-```typescript
-export function useItems() {
-  return useQuery({
-    queryKey: ['items'],
-    queryFn: () => api.get<Item[]>('/items'),
-  })
-}
-```
-
-## Development Workflow (TDD)
-
-1. **Write failing test first** in `tests/unit/` or `tests/e2e/`
-2. **Run test** to confirm it fails
-3. **Implement minimal code** to make test pass
-4. **Refactor** while keeping tests green
-5. **Commit** with descriptive message
-
 ## Testing
 
-- Unit tests: `npm test` (Vitest)
-- E2E tests: `npm run test:e2e` (Playwright)
+Unit tests use `fake-indexeddb` for IndexedDB mocking (auto-imported in `tests/unit/setup.ts`).
+
+Clear database state in `beforeEach`:
+```typescript
+beforeEach(async () => {
+  await db.notes.clear()
+  await db.pendingSync.clear()
+})
+```
 
 ## Path Alias
 
