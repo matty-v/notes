@@ -112,6 +112,25 @@ beforeEach(async () => {
 })
 ```
 
+### File Extensions for Tests
+
+**CRITICAL**: Test files containing JSX syntax MUST use `.tsx` extension, not `.ts`.
+
+- ✅ Use `.tsx` for test files that render React components or use JSX syntax
+- ✅ Use `.ts` for test files with no JSX (e.g., pure function tests)
+- ❌ Never use `.ts` for files containing `<ComponentName>` JSX syntax
+
+Example:
+```typescript
+// ❌ WRONG: use-notes.test.ts
+return <QueryClientProvider>{children}</QueryClientProvider>  // JSX in .ts file
+
+// ✅ CORRECT: use-notes.test.tsx
+return <QueryClientProvider>{children}</QueryClientProvider>  // JSX in .tsx file
+```
+
+Before creating a new test file with React Testing Library or JSX, always use the `.tsx` extension.
+
 ## Path Alias
 
 `@/` maps to `./src/` in imports.
