@@ -20,7 +20,7 @@ export function TagFilter({ selected, onChange }: TagFilterProps) {
   if (tags.length === 0) return null
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex gap-1 overflow-x-auto pb-2">
       {tags.map((tag) => (
         <button
           key={tag}

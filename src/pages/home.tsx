@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -32,9 +33,18 @@ export function HomePage() {
     sortOrder,
   })
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const virtualizer = useVirtualizer({
+    count: notes.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 120,
+    overscan: 5,
+  })
+
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="h-screen flex flex-col max-w-2xl mx-auto p-4">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Notes</h1>
         <div className="flex items-center gap-2">
           <SyncStatus />
@@ -51,7 +61,7 @@ export function HomePage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -72,11 +82,15 @@ export function HomePage() {
         </Select>
       </div>
 
-      <TagFilter selected={tagFilter} onChange={setTagFilter} />
+      <div className="mb-4">
+        <TagFilter selected={tagFilter} onChange={setTagFilter} />
+      </div>
 
-      <NoteForm onSubmit={createNote} />
+      <div className="mb-4">
+        <NoteForm onSubmit={createNote} />
+      </div>
 
-      <div className="space-y-3">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {isLoading ? (
           <p className="text-center text-muted-foreground">Loading...</p>
         ) : notes.length === 0 ? (
@@ -86,14 +100,35 @@ export function HomePage() {
               : 'No notes yet. Create your first note above!'}
           </p>
         ) : (
-          notes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onUpdate={(data) => updateNote({ id: note.id, ...data })}
-              onDelete={() => deleteNote(note.id)}
-            />
-          ))
+          <div
+            style={{
+              height: virtualizer.getTotalSize(),
+              position: 'relative',
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => (
+              <div
+                key={notes[virtualRow.index].id}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div className="pb-3">
+                  <NoteCard
+                    note={notes[virtualRow.index]}
+                    onUpdate={(data) => updateNote({ id: notes[virtualRow.index].id, ...data })}
+                    onDelete={() => deleteNote(notes[virtualRow.index].id)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
