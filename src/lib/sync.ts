@@ -68,11 +68,20 @@ export async function pullFromRemote(): Promise<void> {
     return
   }
 
+  // Get all note IDs with pending delete operations
+  const pendingDeletes = await db.pendingSync
+    .where('operation')
+    .equals('delete')
+    .toArray()
+  const pendingDeleteIds = new Set(pendingDeletes.map((p) => p.noteId))
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const remoteNotes = (await notesSheet.getRows()) as any[]
 
   for (const remote of remoteNotes) {
     if (!remote.id) continue
+    // Skip notes that have pending delete operations
+    if (pendingDeleteIds.has(remote.id as string)) continue
     const local = await db.notes.get(remote.id as string)
     if (!local || new Date(remote.updatedAt as string) > new Date(local.updatedAt)) {
       await db.notes.put(remote as Note)

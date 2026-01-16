@@ -1,7 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { db } from '@/lib/db'
-import { queueSync, getPendingCount } from '@/lib/sync'
+import { queueSync, getPendingCount, pullFromRemote } from '@/lib/sync'
 import type { Note } from '@/lib/types'
+
+vi.mock('@/lib/notes-api', () => ({
+  getNotesSheet: vi.fn(),
+  isApiAvailable: vi.fn(),
+}))
 
 describe('Sync Service', () => {
   beforeEach(async () => {
@@ -31,5 +36,38 @@ describe('Sync Service', () => {
     const pending = await db.pendingSync.toArray()
     expect(pending[0].operation).toBe('delete')
     expect(pending[0].noteId).toBe('note-1')
+  })
+
+  describe('pullFromRemote', () => {
+    it('should not restore notes that have pending delete operations', async () => {
+      const { getNotesSheet, isApiAvailable } = await import('@/lib/notes-api')
+      const mockedGetNotesSheet = vi.mocked(getNotesSheet)
+      const mockedIsApiAvailable = vi.mocked(isApiAvailable)
+
+      // Remote has a note
+      const remoteNote: Note = {
+        id: 'note-to-delete',
+        title: 'Should Not Restore',
+        content: 'This note was deleted locally',
+        tags: '',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      }
+
+      mockedIsApiAvailable.mockResolvedValue(true)
+      mockedGetNotesSheet.mockReturnValue({
+        getRows: vi.fn().mockResolvedValue([remoteNote]),
+      } as never)
+
+      // Queue a delete for this note (simulating user deleted it locally)
+      await queueSync('delete', remoteNote)
+
+      // Pull from remote
+      await pullFromRemote()
+
+      // The note should NOT be restored because there's a pending delete
+      const localNote = await db.notes.get('note-to-delete')
+      expect(localNote).toBeUndefined()
+    })
   })
 })
