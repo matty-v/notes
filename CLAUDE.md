@@ -35,24 +35,26 @@ npx playwright test tests/e2e/home.spec.ts
 ### Offline-First Data Flow
 
 ```
-User Action → useNotes hook → IndexedDB (immediate) → queueSync → pendingSync table
-                                                                        ↓
-                                                              processSyncQueue (when online)
-                                                                        ↓
-                                                              SheetsDbClient → Google Sheets API
+User Action → useNotes hook → Auto-generate (if empty) → IndexedDB (immediate) → queueSync → pendingSync table
+                                     ↓                                                          ↓
+                               Claude API                                          processSyncQueue (when online)
+                                                                                              ↓
+                                                                                    SheetsDbClient → Google Sheets API
 ```
 
 1. **Local-first writes**: All CRUD operations write to IndexedDB immediately via `db.notes`
-2. **Sync queue**: Operations are queued in `db.pendingSync` table for later sync
-3. **Background sync**: `processSyncQueue()` in `src/lib/sync.ts` pushes pending changes when online
-4. **Pull on load**: `pullFromRemote()` fetches remote changes on app load, merging by `updatedAt` timestamp
+2. **Auto-generation**: Title and tags are auto-generated using Claude API when empty (see `src/services/claude/generateMetadata.ts`). Users can configure their Anthropic API key via Settings UI (stored in localStorage).
+3. **Sync queue**: Operations are queued in `db.pendingSync` table for later sync
+4. **Background sync**: `processSyncQueue()` in `src/lib/sync.ts` pushes pending changes when online
+5. **Pull on load**: `pullFromRemote()` fetches remote changes on app load, merging by `updatedAt` timestamp
 
 ### Key Files
 
 - `src/lib/db.ts` - Dexie database schema with `notes` and `pendingSync` tables
 - `src/lib/sync.ts` - Sync queue logic: `queueSync`, `processSyncQueue`, `pullFromRemote`
 - `src/lib/notes-api.ts` - SheetsDbClient initialization and availability checks
-- `src/hooks/use-notes.ts` - TanStack Query hook wrapping all note operations
+- `src/hooks/use-notes.ts` - TanStack Query hook wrapping all note operations with auto-generation
+- `src/services/claude/generateMetadata.ts` - Claude API integration for title/tag generation
 - `src/services/sheetsdb/SheetsDbClient.ts` - HTTP client for Google Sheets proxy API
 
 ### Directory Structure
@@ -62,13 +64,16 @@ src/
   components/
     ui/              # Radix + CVA primitives (Button, Input, etc.)
     sheets/          # Google Sheets setup wizard and settings
+    anthropic/       # Anthropic API key settings panel
   hooks/             # TanStack Query hooks (use-notes, use-sync, use-tags, etc.)
   lib/
     db.ts            # Dexie IndexedDB schema
     sync.ts          # Offline sync queue logic
     notes-api.ts     # SheetsDb client setup
     types.ts         # Shared TypeScript types (Note, PendingSync, etc.)
-  services/sheetsdb/ # SheetsDbClient for Google Sheets API proxy
+  services/
+    claude/          # Claude API integration for auto-generation
+    sheetsdb/        # SheetsDbClient for Google Sheets API proxy
   pages/             # Route components
 ```
 

@@ -9,6 +9,9 @@ export function useSettings() {
   const [spreadsheetId, setSpreadsheetIdState] = useState(
     () => localStorage.getItem(LOCAL_STORAGE_KEYS.SPREADSHEET_ID) || ''
   )
+  const [anthropicApiKey, setAnthropicApiKeyState] = useState(
+    () => localStorage.getItem(LOCAL_STORAGE_KEYS.ANTHROPIC_API_KEY) || ''
+  )
   const [isInitializing, setIsInitializing] = useState(false)
   const [status, setStatus] = useState('')
 
@@ -20,6 +23,16 @@ export function useSettings() {
   const clearSpreadsheetId = useCallback(() => {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.SPREADSHEET_ID)
     setSpreadsheetIdState('')
+  }, [])
+
+  const setAnthropicApiKey = useCallback((key: string) => {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.ANTHROPIC_API_KEY, key)
+    setAnthropicApiKeyState(key)
+  }, [])
+
+  const clearAnthropicApiKey = useCallback(() => {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.ANTHROPIC_API_KEY)
+    setAnthropicApiKeyState('')
   }, [])
 
   const initializeSheets = useCallback(async (sheetId: string): Promise<boolean> => {
@@ -87,6 +100,9 @@ export function useSettings() {
     spreadsheetId,
     setSpreadsheetId,
     clearSpreadsheetId,
+    anthropicApiKey,
+    setAnthropicApiKey,
+    clearAnthropicApiKey,
     initializeSheets,
     connectSpreadsheet,
     isInitializing,
