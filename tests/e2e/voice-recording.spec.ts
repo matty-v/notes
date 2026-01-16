@@ -13,7 +13,7 @@ test.describe('Voice Recording', () => {
     await expect(micButton).toBeVisible()
   })
 
-  test('should toggle recording state when microphone button is clicked', async ({ page, context }) => {
+  test('should toggle recording state when microphone button is clicked', async ({ page }) => {
     // Mock the SpeechRecognition API since Playwright doesn't have real speech input
     await page.addInitScript(() => {
       class MockSpeechRecognition {
@@ -154,21 +154,18 @@ test.describe('Voice Recording', () => {
         onresult: ((event: any) => void) | null = null
         onerror: ((event: any) => void) | null = null
         onend: (() => void) | null = null
-        private stopped = false
 
         start() {
-          this.stopped = false
+          // No-op for mock
         }
 
         stop() {
-          this.stopped = true
           if (this.onend) {
             this.onend()
           }
         }
 
         abort() {
-          this.stopped = true
           if (this.onend) {
             this.onend()
           }

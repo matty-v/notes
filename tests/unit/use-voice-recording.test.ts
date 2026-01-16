@@ -37,7 +37,7 @@ class MockSpeechRecognition {
             0: { transcript, confidence: 0.9 },
             isFinal,
             length: 1,
-            item: (index: number) => ({ transcript, confidence: 0.9 }),
+            item: (_index: number) => ({ transcript, confidence: 0.9 }),
           },
         ],
       }
