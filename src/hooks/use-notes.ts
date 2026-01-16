@@ -4,6 +4,11 @@ import { v4 as uuid } from 'uuid'
 import { db } from '@/lib/db'
 import { queueSync, pullFromRemote } from '@/lib/sync'
 import type { Note, SortOrder } from '@/lib/types'
+import {
+  generateMetadata,
+  shouldGenerateTitle,
+  shouldGenerateTags,
+} from '@/services/claude/generateMetadata'
 
 interface CreateNoteInput {
   title: string
@@ -64,12 +69,28 @@ export function useNotes(options: UseNotesOptions = {}) {
 
   const createNote = useMutation({
     mutationFn: async (input: CreateNoteInput) => {
+      let title = input.title
+      let tags = input.tags
+
+      // Auto-generate title and/or tags if they're empty
+      if (shouldGenerateTitle(title) || shouldGenerateTags(tags)) {
+        const generated = await generateMetadata(input.content)
+        if (generated) {
+          if (shouldGenerateTitle(title)) {
+            title = generated.title
+          }
+          if (shouldGenerateTags(tags)) {
+            tags = generated.tags.join(', ')
+          }
+        }
+      }
+
       const now = new Date().toISOString()
       const note: Note = {
         id: uuid(),
-        title: input.title,
+        title,
         content: input.content,
-        tags: input.tags,
+        tags,
         createdAt: now,
         updatedAt: now,
       }
@@ -88,9 +109,28 @@ export function useNotes(options: UseNotesOptions = {}) {
       const existing = await db.notes.get(id)
       if (!existing) throw new Error('Note not found')
 
+      let title = updates.title !== undefined ? updates.title : existing.title
+      let tags = updates.tags !== undefined ? updates.tags : existing.tags
+      const content = updates.content !== undefined ? updates.content : existing.content
+
+      // Auto-generate title and/or tags if they're empty and content exists
+      if (shouldGenerateTitle(title) || shouldGenerateTags(tags)) {
+        const generated = await generateMetadata(content)
+        if (generated) {
+          if (shouldGenerateTitle(title)) {
+            title = generated.title
+          }
+          if (shouldGenerateTags(tags)) {
+            tags = generated.tags.join(', ')
+          }
+        }
+      }
+
       const updated: Note = {
         ...existing,
         ...updates,
+        title,
+        tags,
         updatedAt: new Date().toISOString(),
       }
       await db.notes.put(updated)
