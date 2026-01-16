@@ -12,9 +12,8 @@
  *   1 - Lock file is out of sync or validation failed
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
 
 function validateLockFile() {
   console.log('🔍 Validating package-lock.json sync...\n');
