@@ -100,8 +100,14 @@ Respond ONLY with the JSON object, no other text.`,
       return null
     }
 
+    // Strip markdown code blocks if present
+    let jsonText = textContent.trim()
+    if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '')
+    }
+
     // Parse the JSON response
-    const generated = JSON.parse(textContent) as GeneratedMetadata
+    const generated = JSON.parse(jsonText) as GeneratedMetadata
 
     // Validate the response structure
     if (!generated.title || !Array.isArray(generated.tags)) {
