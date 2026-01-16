@@ -5,7 +5,9 @@ export function useTags() {
   const { data: tags = [], isLoading } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
-      const notes = await db.notes.toArray()
+      const allNotes = await db.notes.toArray()
+      // Filter out soft-deleted notes
+      const notes = allNotes.filter((n) => !n.deletedAt)
       const tagSet = new Set<string>()
 
       for (const note of notes) {

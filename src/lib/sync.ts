@@ -82,6 +82,13 @@ export async function pullFromRemote(): Promise<void> {
     if (!remote.id) continue
     // Skip notes that have pending delete operations
     if (pendingDeleteIds.has(remote.id as string)) continue
+
+    // If remote note is deleted, delete it locally
+    if (remote.deletedAt) {
+      await db.notes.delete(remote.id as string)
+      continue
+    }
+
     const local = await db.notes.get(remote.id as string)
     if (!local || new Date(remote.updatedAt as string) > new Date(local.updatedAt)) {
       await db.notes.put(remote as Note)

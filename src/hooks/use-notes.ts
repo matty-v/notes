@@ -41,6 +41,9 @@ export function useNotes(options: UseNotesOptions = {}) {
     queryFn: async () => {
       let results = await db.notes.toArray()
 
+      // Filter out soft-deleted notes
+      results = results.filter((n) => !n.deletedAt)
+
       if (search) {
         const lower = search.toLowerCase()
         results = results.filter(
@@ -147,8 +150,10 @@ export function useNotes(options: UseNotesOptions = {}) {
     mutationFn: async (id: string) => {
       const note = await db.notes.get(id)
       if (note) {
-        await db.notes.delete(id)
-        await queueSync('delete', note)
+        const now = new Date().toISOString()
+        const deletedNote = { ...note, deletedAt: now, updatedAt: now }
+        await db.notes.put(deletedNote)
+        await queueSync('update', deletedNote)
       }
     },
     onSuccess: () => {
