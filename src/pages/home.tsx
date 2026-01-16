@@ -16,7 +16,15 @@ export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
-  const { spreadsheetId, connectSpreadsheet, isInitializing, status } = useSettings()
+  const {
+    spreadsheetId,
+    connectSpreadsheet,
+    isInitializing,
+    status,
+    anthropicApiKey,
+    setAnthropicApiKey,
+    clearAnthropicApiKey,
+  } = useSettings()
 
   const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
     search,
@@ -36,6 +44,9 @@ export function HomePage() {
             onSave={connectSpreadsheet}
             isSaving={isInitializing}
             status={status}
+            anthropicApiKey={anthropicApiKey}
+            onSaveApiKey={setAnthropicApiKey}
+            onClearApiKey={clearAnthropicApiKey}
           />
         </div>
       </div>

@@ -2,6 +2,8 @@
  * Service for generating note titles and tags using Claude API
  */
 
+import { LOCAL_STORAGE_KEYS } from '@/config/constants'
+
 interface GeneratedMetadata {
   title: string
   tags: string[]
@@ -32,7 +34,10 @@ export async function generateMetadata(
     return null
   }
 
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
+  // Try to get API key from localStorage first, then fall back to env variable
+  const apiKey =
+    localStorage.getItem(LOCAL_STORAGE_KEYS.ANTHROPIC_API_KEY) ||
+    import.meta.env.VITE_ANTHROPIC_API_KEY
 
   // If API key is not configured, silently skip generation
   if (!apiKey) {

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { SheetsSettingsPanel } from '@/components/sheets'
+import { AnthropicSettingsPanel } from '@/components/anthropic'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
 
 interface SettingsDialogProps {
@@ -16,6 +17,9 @@ interface SettingsDialogProps {
   onSave: (newId: string) => Promise<boolean>
   isSaving: boolean
   status: string
+  anthropicApiKey: string
+  onSaveApiKey: (key: string) => void
+  onClearApiKey: () => void
 }
 
 export function SettingsDialog({
@@ -23,6 +27,9 @@ export function SettingsDialog({
   onSave,
   isSaving,
   status,
+  anthropicApiKey,
+  onSaveApiKey,
+  onClearApiKey,
 }: SettingsDialogProps) {
   const [open, setOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -51,21 +58,34 @@ export function SettingsDialog({
           <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
-        <SheetsSettingsPanel
-          serviceAccountEmail={SERVICE_ACCOUNT_EMAIL}
-          spreadsheetId={spreadsheetId}
-          isEditing={isEditing}
-          onEditingChange={setIsEditing}
-          tempInputValue={tempId}
-          onTempInputChange={setTempId}
-          onSave={handleSave}
-          isSaving={isSaving}
-          status={status}
-        />
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Google Sheets Sync</h3>
+            <SheetsSettingsPanel
+              serviceAccountEmail={SERVICE_ACCOUNT_EMAIL}
+              spreadsheetId={spreadsheetId}
+              isEditing={isEditing}
+              onEditingChange={setIsEditing}
+              tempInputValue={tempId}
+              onTempInputChange={setTempId}
+              onSave={handleSave}
+              isSaving={isSaving}
+              status={status}
+            />
+          </div>
+          <div className="border-t pt-6">
+            <h3 className="text-sm font-semibold mb-3">AI Auto-Generation</h3>
+            <AnthropicSettingsPanel
+              apiKey={anthropicApiKey}
+              onSave={onSaveApiKey}
+              onClear={onClearApiKey}
+            />
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

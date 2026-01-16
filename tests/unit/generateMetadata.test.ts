@@ -11,6 +11,8 @@ global.fetch = vi.fn()
 describe('generateMetadata', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Clear localStorage
+    localStorage.clear()
     // Reset environment variable
     vi.stubEnv('VITE_ANTHROPIC_API_KEY', 'test-api-key')
   })
@@ -29,6 +31,74 @@ describe('generateMetadata', () => {
     vi.stubEnv('VITE_ANTHROPIC_API_KEY', '')
     const result = await generateMetadata('Some content')
     expect(result).toBeNull()
+  })
+
+  it('should use API key from localStorage when available', async () => {
+    localStorage.setItem('notesAnthropicApiKey', 'local-storage-key')
+
+    const mockResponse = {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            title: 'Test Title',
+            tags: ['tag1', 'tag2'],
+          }),
+        },
+      ],
+    }
+
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    await generateMetadata('This is a test note')
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.anthropic.com/v1/messages',
+      expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'local-storage-key',
+          'anthropic-version': '2023-06-01',
+        },
+      })
+    )
+  })
+
+  it('should prefer localStorage API key over environment variable', async () => {
+    vi.stubEnv('VITE_ANTHROPIC_API_KEY', 'env-key')
+    localStorage.setItem('notesAnthropicApiKey', 'local-storage-key')
+
+    const mockResponse = {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            title: 'Test Title',
+            tags: ['tag1', 'tag2'],
+          }),
+        },
+      ],
+    }
+
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
+
+    await generateMetadata('This is a test note')
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'https://api.anthropic.com/v1/messages',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'x-api-key': 'local-storage-key',
+        }),
+      })
+    )
   })
 
   it('should call Claude API with correct parameters', async () => {

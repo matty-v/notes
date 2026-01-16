@@ -43,7 +43,7 @@ User Action → useNotes hook → Auto-generate (if empty) → IndexedDB (immedi
 ```
 
 1. **Local-first writes**: All CRUD operations write to IndexedDB immediately via `db.notes`
-2. **Auto-generation**: Title and tags are auto-generated using Claude API when empty (see `src/services/claude/generateMetadata.ts`)
+2. **Auto-generation**: Title and tags are auto-generated using Claude API when empty (see `src/services/claude/generateMetadata.ts`). Users can configure their Anthropic API key via Settings UI (stored in localStorage).
 3. **Sync queue**: Operations are queued in `db.pendingSync` table for later sync
 4. **Background sync**: `processSyncQueue()` in `src/lib/sync.ts` pushes pending changes when online
 5. **Pull on load**: `pullFromRemote()` fetches remote changes on app load, merging by `updatedAt` timestamp
@@ -64,6 +64,7 @@ src/
   components/
     ui/              # Radix + CVA primitives (Button, Input, etc.)
     sheets/          # Google Sheets setup wizard and settings
+    anthropic/       # Anthropic API key settings panel
   hooks/             # TanStack Query hooks (use-notes, use-sync, use-tags, etc.)
   lib/
     db.ts            # Dexie IndexedDB schema

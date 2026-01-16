@@ -31,14 +31,30 @@ Auto-generation occurs when:
 
 ### API Key Setup
 
-Add your Anthropic API key to your environment:
+There are two ways to configure your Anthropic API key:
+
+#### 1. Settings UI (Recommended)
+
+1. Click the Settings icon in the top-right corner
+2. Scroll to the "AI Auto-Generation" section
+3. Click "Add API Key"
+4. Paste your Anthropic API key
+5. Click "Save"
+
+The API key is stored securely in your browser's localStorage.
+
+#### 2. Environment Variable (Optional)
+
+You can also set an API key via environment variable for development:
 
 ```bash
 # .env.local
 VITE_ANTHROPIC_API_KEY=your-anthropic-api-key-here
 ```
 
-Get an API key from: https://console.anthropic.com/
+If both are configured, the Settings UI key takes precedence.
+
+Get an API key from: https://console.anthropic.com/settings/keys
 
 ### Optional Configuration
 
@@ -46,6 +62,7 @@ The auto-generation feature:
 - Uses Claude 3.5 Haiku for fast, cost-effective generation
 - Falls back gracefully if API key is not configured
 - Doesn't block save operations if generation fails
+- Each user can provide their own API key via the Settings UI
 
 ## Usage Examples
 
