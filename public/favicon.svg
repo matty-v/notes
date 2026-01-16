@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <!-- Shadow for depth -->
-  <path d="M100 56h256l112 112v304c0 26.5-21.5 48-48 48H100c-26.5 0-48-21.5-48-48V104c0-26.5 21.5-48 48-48z" fill="#00000010"/>
-  
+  <path d="M100 56h256l112 112v304c0 26.5-21.5 48-48 48H100c-26.5 0-48-21.5-48-48V104c0-26.5 21.5-48 48-48z" fill="#00000030"/>
+
   <!-- Main paper body -->
-  <path d="M96 48h256l112 112v304c0 26.5-21.5 48-48 48H96c-26.5 0-48-21.5-48-48V96c0-26.5 21.5-48 48-48z" fill="#FFFFFF" stroke="#D4D4D4" stroke-width="4"/>
-  
+  <path d="M96 48h256l112 112v304c0 26.5-21.5 48-48 48H96c-26.5 0-48-21.5-48-48V96c0-26.5 21.5-48 48-48z" fill="#141D2E" stroke="#1E293B" stroke-width="4"/>
+
   <!-- Folded corner -->
-  <path d="M352 48v64c0 26.5 21.5 48 48 48h64L352 48z" fill="#F59E0B"/>
-  
+  <path d="M352 48v64c0 26.5 21.5 48 48 48h64L352 48z" fill="#0078D7"/>
+
   <!-- Lines on paper -->
-  <line x1="112" y1="200" x2="340" y2="200" stroke="#D4D4D4" stroke-width="8" stroke-linecap="round"/>
-  <line x1="112" y1="270" x2="300" y2="270" stroke="#D4D4D4" stroke-width="8" stroke-linecap="round"/>
-  <line x1="112" y1="340" x2="320" y2="340" stroke="#D4D4D4" stroke-width="8" stroke-linecap="round"/>
+  <line x1="112" y1="200" x2="340" y2="200" stroke="#94A3B8" stroke-width="8" stroke-linecap="round"/>
+  <line x1="112" y1="270" x2="300" y2="270" stroke="#94A3B8" stroke-width="8" stroke-linecap="round"/>
+  <line x1="112" y1="340" x2="320" y2="340" stroke="#94A3B8" stroke-width="8" stroke-linecap="round"/>
 </svg>
