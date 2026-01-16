@@ -48,7 +48,7 @@ export function NoteForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) return
+    if (!title.trim() && !content.trim()) return
 
     // Stop recording if active
     if (isListening) {
@@ -88,7 +88,6 @@ export function NoteForm({
         placeholder="Note title..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        required
       />
       <div className="relative">
         <textarea
@@ -122,7 +121,7 @@ export function NoteForm({
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={isSubmitting || !title.trim()}>
+        <Button type="submit" disabled={isSubmitting || (!title.trim() && !content.trim())}>
           {isSubmitting ? 'Saving...' : submitLabel}
         </Button>
       </div>
