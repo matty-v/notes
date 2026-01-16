@@ -71,7 +71,7 @@ Respond ONLY with the JSON object, no other text.`,
       },
     ]
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

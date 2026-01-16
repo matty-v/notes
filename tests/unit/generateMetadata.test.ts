@@ -56,7 +56,7 @@ describe('generateMetadata', () => {
     await generateMetadata('This is a test note')
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.anthropic.com/v1/messages',
+      'https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages',
       expect.objectContaining({
         method: 'POST',
         headers: {
@@ -92,7 +92,7 @@ describe('generateMetadata', () => {
     await generateMetadata('This is a test note')
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.anthropic.com/v1/messages',
+      'https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages',
       expect.objectContaining({
         headers: expect.objectContaining({
           'x-api-key': 'local-storage-key',
@@ -122,7 +122,7 @@ describe('generateMetadata', () => {
     await generateMetadata('This is a test note about programming')
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'https://api.anthropic.com/v1/messages',
+      'https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages',
       expect.objectContaining({
         method: 'POST',
         headers: {
