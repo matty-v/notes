@@ -50,20 +50,20 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
   }
 
   return (
-    <div className="p-4 border rounded-lg bg-card">
+    <div className="p-4 rounded-xl bg-[rgba(18,24,33,0.7)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_40px_rgba(0,212,255,0.05),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:border-[rgba(167,139,250,0.4)] hover:shadow-[0_0_60px_rgba(167,139,250,0.1),inset_0_1px_0_rgba(255,255,255,0.1)]">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-medium">{note.title}</h3>
-        <span className="text-sm text-muted-foreground whitespace-nowrap">{date}</span>
+        <h3 className="font-medium text-foreground">{note.title}</h3>
+        <span className="text-sm text-muted-foreground whitespace-nowrap font-light">{date}</span>
       </div>
       {note.content && (
-        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{note.content}</p>
+        <p className="mt-2 text-sm text-muted-foreground line-clamp-3 font-light">{note.content}</p>
       )}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 text-xs bg-secondary rounded"
+              className="px-2 py-0.5 text-xs rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)]"
             >
               {tag}
             </span>
@@ -74,6 +74,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
             variant="ghost"
             size="sm"
             onClick={() => setIsEditing(true)}
+            className="hover:text-[var(--accent-cyan)]"
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -82,6 +83,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
             size="sm"
             onClick={handleDelete}
             disabled={isDeleting}
+            className="hover:text-[var(--accent-pink)] hover:bg-[rgba(236,72,153,0.1)]"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
