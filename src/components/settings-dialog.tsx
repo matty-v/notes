@@ -60,11 +60,11 @@ export function SettingsDialog({
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle className="glow-purple">Settings</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold mb-3">Google Sheets Sync</h3>
+            <h3 className="text-sm font-semibold mb-3 text-[var(--accent-cyan)]">Google Sheets Sync</h3>
             <SheetsSettingsPanel
               serviceAccountEmail={SERVICE_ACCOUNT_EMAIL}
               spreadsheetId={spreadsheetId}
@@ -77,8 +77,8 @@ export function SettingsDialog({
               status={status}
             />
           </div>
-          <div className="border-t pt-6">
-            <h3 className="text-sm font-semibold mb-3">AI Auto-Generation</h3>
+          <div className="border-t border-[rgba(100,150,255,0.2)] pt-6">
+            <h3 className="text-sm font-semibold mb-3 text-[var(--accent-purple)]">AI Auto-Generation</h3>
             <AnthropicSettingsPanel
               apiKey={anthropicApiKey}
               onSave={onSaveApiKey}
