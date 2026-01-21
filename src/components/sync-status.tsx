@@ -10,10 +10,10 @@ export function SyncStatus() {
       onClick={sync}
       disabled={!isOnline || isSyncing}
       className={cn(
-        'inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-full transition-colors border',
+        'inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all duration-300 border',
         isOnline
-          ? 'bg-secondary/50 text-foreground border-border hover:bg-secondary'
-          : 'bg-muted text-muted-foreground border-border'
+          ? 'bg-[rgba(0,212,255,0.1)] text-[var(--accent-cyan)] border-[rgba(0,212,255,0.2)] hover:border-[var(--accent-cyan)] hover:shadow-[0_0_20px_rgba(0,212,255,0.2)]'
+          : 'bg-[rgba(167,139,250,0.1)] text-[var(--accent-purple)] border-[rgba(167,139,250,0.2)]'
       )}
     >
       {isSyncing ? (
