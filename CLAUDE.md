@@ -138,3 +138,57 @@ Before creating a new test file with React Testing Library or JSX, always use th
 ## Theming
 
 CSS variables in `src/index.css`. Toggle dark mode by adding `dark` class to `<html>`.
+
+## Code Style
+
+- **Prefer functional components** with hooks over class components
+- **Use TypeScript strict mode** - avoid `any` types, prefer explicit typing
+- **Async/await** over raw promises for readability
+- **Early returns** to reduce nesting
+- **Destructure props** in function signatures
+
+```typescript
+// ✅ Good
+const NoteCard = ({ title, content, onDelete }: NoteCardProps) => {
+  if (!title) return null
+  // ...
+}
+
+// ❌ Avoid
+function NoteCard(props: any) {
+  if (props.title) {
+    // nested logic...
+  }
+}
+```
+
+## PR Guidelines
+
+- **Keep PRs focused** - one feature or fix per PR
+- **Update tests** for any behavior changes
+- **Run `npm run lint` and `npm run test`** before submitting
+- **Include a clear description** of what changed and why
+- **Update documentation** for user-facing changes
+- **Squash fixup commits** before merging
+
+## Security Notes
+
+- **Never commit secrets** - API keys, tokens, or credentials belong in environment variables or secrets managers
+- **Validate user input** - especially note content before any processing
+- **Sanitize displayed content** - prevent XSS when rendering note content
+- **Use HTTPS** for all external API calls (SheetsDbClient, Claude API)
+- **LocalStorage limitations** - API keys stored in localStorage are accessible to any script; this is acceptable for personal use but not for shared deployments
+
+## Review Checklist
+
+When reviewing PRs (for Claude or humans):
+
+- [ ] Tests pass (`npm run test`)
+- [ ] Linting passes (`npm run lint`)
+- [ ] Build succeeds (`npm run build`)
+- [ ] No TypeScript errors or `any` types introduced
+- [ ] Error handling for async operations
+- [ ] Loading states for UI components that fetch data
+- [ ] Offline behavior considered (IndexedDB operations should work offline)
+- [ ] No sensitive data logged or exposed
+- [ ] Documentation updated if needed
