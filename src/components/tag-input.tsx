@@ -12,7 +12,6 @@ interface TagInputProps {
 export function TagInput({ value, onChange, placeholder = 'Add tags...', pendingInputRef }: TagInputProps) {
   const [input, setInput] = useState('')
 
-  // Keep parent informed of pending input
   if (pendingInputRef) {
     pendingInputRef.current = input
   }
@@ -50,17 +49,17 @@ export function TagInput({ value, onChange, placeholder = 'Add tags...', pending
 
   return (
     <div className="relative">
-      <div className="flex flex-wrap gap-1 p-2 border border-input rounded-md bg-background min-h-[42px]">
+      <div className="flex flex-wrap gap-1 p-2 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] min-h-[42px] focus-within:border-[var(--accent-cyan)] focus-within:shadow-[0_0_20px_rgba(0,212,255,0.1)] transition-all duration-300">
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-sm bg-secondary text-secondary-foreground rounded"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)]"
           >
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="hover:text-destructive transition-colors"
+              className="hover:text-[var(--accent-pink)] transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -82,13 +81,13 @@ export function TagInput({ value, onChange, placeholder = 'Add tags...', pending
         />
       </div>
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-md">
+        <div className="absolute z-10 w-full mt-1 bg-[rgba(18,24,33,0.95)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] rounded-lg shadow-[0_0_40px_rgba(0,212,255,0.1)]">
           {suggestions.slice(0, 5).map((tag) => (
             <button
               key={tag}
               type="button"
               onClick={() => addTag(tag)}
-              className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-[rgba(0,212,255,0.1)] hover:text-[var(--accent-cyan)] transition-colors first:rounded-t-lg last:rounded-b-lg"
             >
               {tag}
             </button>
