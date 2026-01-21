@@ -53,11 +53,10 @@ export function NoteForm({
       stopListening()
     }
 
-    let finalTags = [...tags]
     const pendingTag = pendingTagRef.current.trim().toLowerCase()
-    if (pendingTag && !finalTags.includes(pendingTag)) {
-      finalTags.push(pendingTag)
-    }
+    const finalTags = pendingTag && !tags.includes(pendingTag)
+      ? [...tags, pendingTag]
+      : [...tags]
 
     setIsSubmitting(true)
     try {
