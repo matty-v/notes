@@ -44,8 +44,8 @@ export function HomePage() {
 
   return (
     <div className="h-screen flex flex-col max-w-2xl mx-auto p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">Notes</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight"><span className="glow-cyan">Notes</span></h1>
         <div className="flex items-center gap-2">
           <SyncStatus />
           <SettingsDialog
@@ -91,9 +91,9 @@ export function HomePage() {
 
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <p className="text-center text-muted-foreground">Loading...</p>
+          <p className="text-center text-muted-foreground font-light">Loading...</p>
         ) : notes.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">
+          <p className="text-center text-muted-foreground font-light py-8">
             {search || tagFilter.length > 0
               ? 'No notes match your filters'
               : 'No notes yet. Create your first note above!'}
