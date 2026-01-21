@@ -26,10 +26,10 @@ export function TagFilter({ selected, onChange }: TagFilterProps) {
           key={tag}
           onClick={() => toggleTag(tag)}
           className={cn(
-            'px-2 py-1 text-xs rounded-full border transition-colors',
+            'px-3 py-1 text-xs rounded-lg border transition-all duration-300',
             selected.includes(tag)
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-background hover:bg-accent'
+              ? 'bg-[var(--accent-cyan)] text-[#0a0e14] border-[var(--accent-cyan)] shadow-[0_0_15px_rgba(0,212,255,0.3)]'
+              : 'bg-[rgba(18,24,33,0.5)] text-muted-foreground border-[rgba(100,150,255,0.2)] hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)]'
           )}
         >
           {tag}
