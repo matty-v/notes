@@ -27,7 +27,6 @@ export function NoteForm({
 
   const { isListening, transcript, error: voiceError, isSupported, startListening, stopListening, resetTranscript } = useVoiceRecording()
 
-  // Append transcript to content when it changes
   useEffect(() => {
     if (transcript) {
       setContent(prev => {
@@ -50,12 +49,10 @@ export function NoteForm({
     e.preventDefault()
     if (!title.trim() && !content.trim()) return
 
-    // Stop recording if active
     if (isListening) {
       stopListening()
     }
 
-    // Include any pending tag input
     let finalTags = [...tags]
     const pendingTag = pendingTagRef.current.trim().toLowerCase()
     if (pendingTag && !finalTags.includes(pendingTag)) {
@@ -83,7 +80,7 @@ export function NoteForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 p-4 border rounded-lg bg-card">
+    <form onSubmit={handleSubmit} className="space-y-3 p-4 rounded-xl bg-[rgba(18,24,33,0.7)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_40px_rgba(0,212,255,0.05),inset_0_1px_0_rgba(255,255,255,0.05)]">
       <Input
         placeholder="Note title..."
         value={title}
@@ -94,7 +91,7 @@ export function NoteForm({
           placeholder="Write your note..."
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full min-h-[80px] px-3 py-2 pr-12 border border-input rounded-md bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background placeholder:text-muted-foreground"
+          className="w-full min-h-[80px] px-3 py-2 pr-12 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] text-foreground text-sm resize-none focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_20px_rgba(0,212,255,0.1)] placeholder:text-muted-foreground transition-all duration-300"
         />
         {isSupported && (
           <Button
@@ -110,7 +107,7 @@ export function NoteForm({
         )}
       </div>
       {voiceError && (
-        <p className="text-sm text-destructive">{voiceError}</p>
+        <p className="text-sm text-[var(--accent-pink)]">{voiceError}</p>
       )}
       <div className="flex items-center gap-2">
         <div className="flex-1">
