@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { db } from '@/lib/db'
 import { queueSync, getPendingCount, pullFromRemote } from '@/lib/sync'
 import type { Note } from '@/lib/types'
+import { createMockNote } from '../utils/factories'
 
 vi.mock('@/lib/notes-api', () => ({
   getNotesSheet: vi.fn(),
@@ -15,14 +16,12 @@ describe('Sync Service', () => {
   })
 
   it('should queue a create operation', async () => {
-    const note = {
+    const note = createMockNote({
       id: 'note-1',
       title: 'Test',
       content: 'Content',
       tags: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+    })
 
     await queueSync('create', note)
 
@@ -31,7 +30,7 @@ describe('Sync Service', () => {
   })
 
   it('should queue a delete operation', async () => {
-    await queueSync('delete', { id: 'note-1' } as Note)
+    await queueSync('delete', createMockNote({ id: 'note-1' }))
 
     const pending = await db.pendingSync.toArray()
     expect(pending[0].operation).toBe('delete')
@@ -45,14 +44,14 @@ it('should delete local notes when remote has deletedAt set', async () => {
       const mockedIsApiAvailable = vi.mocked(isApiAvailable)
 
       // Local has a note
-      const localNote: Note = {
+      const localNote = createMockNote({
         id: 'note-1',
         title: 'Local Note',
         content: 'This exists locally',
         tags: '',
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',
-      }
+      })
       await db.notes.add(localNote)
 
       // Remote has the same note but with deletedAt set (deleted on another device)
@@ -81,14 +80,14 @@ it('should delete local notes when remote has deletedAt set', async () => {
       const mockedIsApiAvailable = vi.mocked(isApiAvailable)
 
       // Remote has a note
-      const remoteNote: Note = {
+      const remoteNote = createMockNote({
         id: 'note-to-delete',
         title: 'Should Not Restore',
         content: 'This note was deleted locally',
         tags: '',
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-01T00:00:00.000Z',
-      }
+      })
 
       mockedIsApiAvailable.mockResolvedValue(true)
       mockedGetNotesSheet.mockReturnValue({
