@@ -18,6 +18,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "deploy": "npm run build && firebase deploy",
     "prepare": "husky"
   },
