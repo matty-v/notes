@@ -24,11 +24,7 @@ function renderWithQueryClient(ui: React.ReactElement) {
 }
 
 describe('NoteCard', () => {
-  const mockNote = createMockNote({
-    title: 'Test Note',
-    content: 'This is test content',
-    tags: 'test,example',
-  })
+  let mockNote: ReturnType<typeof createMockNote>
 
   const mockOnUpdate = vi.fn().mockResolvedValue(undefined)
   const mockOnDelete = vi.fn().mockResolvedValue(undefined)
@@ -36,6 +32,11 @@ describe('NoteCard', () => {
   beforeEach(() => {
     resetIdCounter()
     vi.clearAllMocks()
+    mockNote = createMockNote({
+      title: 'Test Note',
+      content: 'This is test content',
+      tags: 'test,example',
+    })
   })
 
   it('should render note title and content', () => {
