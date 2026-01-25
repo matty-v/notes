@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NoteCard } from '@/components/note-card'
-import type { Note } from '@/lib/types'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { createMockNote, resetIdCounter } from '../utils/factories'
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -24,17 +24,19 @@ function renderWithQueryClient(ui: React.ReactElement) {
 }
 
 describe('NoteCard', () => {
-  const mockNote: Note = {
-    id: '1',
+  const mockNote = createMockNote({
     title: 'Test Note',
     content: 'This is test content',
     tags: 'test,example',
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  }
+  })
 
   const mockOnUpdate = vi.fn().mockResolvedValue(undefined)
   const mockOnDelete = vi.fn().mockResolvedValue(undefined)
+
+  beforeEach(() => {
+    resetIdCounter()
+    vi.clearAllMocks()
+  })
 
   it('should render note title and content', () => {
     renderWithQueryClient(
@@ -83,10 +85,7 @@ describe('NoteCard', () => {
   })
 
   it('should not show expand/collapse indicator for short content', () => {
-    const shortNote: Note = {
-      ...mockNote,
-      content: 'Short content',
-    }
+    const shortNote = createMockNote({ content: 'Short content' })
     renderWithQueryClient(
       <NoteCard note={shortNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
     )
@@ -96,10 +95,9 @@ describe('NoteCard', () => {
   })
 
   it('should show "Show more" indicator for truncated content', () => {
-    const longNote: Note = {
-      ...mockNote,
+    const longNote = createMockNote({
       content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    }
+    })
 
     // Mock scrollHeight to be greater than clientHeight to simulate truncation
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
@@ -120,10 +118,9 @@ describe('NoteCard', () => {
 
   it('should expand content when "Show more" is clicked', async () => {
     const user = userEvent.setup()
-    const longNote: Note = {
-      ...mockNote,
+    const longNote = createMockNote({
       content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    }
+    })
 
     // Mock scrollHeight to be greater than clientHeight to simulate truncation
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
@@ -147,10 +144,9 @@ describe('NoteCard', () => {
 
   it('should collapse content when "Show less" is clicked', async () => {
     const user = userEvent.setup()
-    const longNote: Note = {
-      ...mockNote,
+    const longNote = createMockNote({
       content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    }
+    })
 
     // Mock scrollHeight to be greater than clientHeight to simulate truncation
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
@@ -177,10 +173,9 @@ describe('NoteCard', () => {
 
   it('should support keyboard navigation for expand/collapse', async () => {
     const user = userEvent.setup()
-    const longNote: Note = {
-      ...mockNote,
+    const longNote = createMockNote({
       content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    }
+    })
 
     // Mock scrollHeight to be greater than clientHeight to simulate truncation
     Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
