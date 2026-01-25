@@ -29,8 +29,8 @@ describe('NoteCard', () => {
     title: 'Test Note',
     content: 'This is test content',
     tags: 'test,example',
-    createdAt: new Date('2024-01-01').getTime(),
-    updatedAt: new Date('2024-01-01').getTime(),
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
   }
 
   const mockOnUpdate = vi.fn().mockResolvedValue(undefined)
