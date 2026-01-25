@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
 import type { Note } from '@/lib/types'
@@ -13,6 +13,9 @@ interface NoteCardProps {
 export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isTruncated, setIsTruncated] = useState(false)
+  const contentRef = useRef<HTMLParagraphElement>(null)
 
   const tags = (note.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
   const date = note.createdAt
@@ -22,12 +25,27 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
       })
     : ''
 
+  // Check if content is truncated
+  useEffect(() => {
+    if (contentRef.current && note.content) {
+      const element = contentRef.current
+      const isContentTruncated = element.scrollHeight > element.clientHeight
+      setIsTruncated(isContentTruncated)
+    }
+  }, [note.content])
+
   const handleDelete = async () => {
     setIsDeleting(true)
     try {
       await onDelete()
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const toggleExpanded = () => {
+    if (isTruncated || isExpanded) {
+      setIsExpanded(!isExpanded)
     }
   }
 
@@ -56,7 +74,42 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
         <span className="text-sm text-muted-foreground whitespace-nowrap font-light">{date}</span>
       </div>
       {note.content && (
-        <p className="mt-2 text-sm text-muted-foreground line-clamp-3 font-light">{note.content}</p>
+        <div
+          onClick={toggleExpanded}
+          className={`mt-2 ${isTruncated || isExpanded ? 'cursor-pointer' : ''}`}
+          role={isTruncated || isExpanded ? 'button' : undefined}
+          tabIndex={isTruncated || isExpanded ? 0 : undefined}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && (isTruncated || isExpanded)) {
+              e.preventDefault()
+              toggleExpanded()
+            }
+          }}
+        >
+          <p
+            ref={contentRef}
+            className={`text-sm text-muted-foreground font-light transition-all duration-300 ${
+              isExpanded ? '' : 'line-clamp-3'
+            }`}
+          >
+            {note.content}
+          </p>
+          {(isTruncated || isExpanded) && (
+            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  <span>Show less</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  <span>Show more</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       )}
       <div className="mt-3 flex items-center justify-between">
         <div className="flex flex-wrap gap-1">

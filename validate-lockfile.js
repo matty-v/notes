@@ -36,10 +36,11 @@ function validateLockFile() {
     const lockFileBefore = fs.readFileSync('package-lock.json', 'utf8');
 
     // Run npm install in dry-run mode to check if changes would be made
+    // Use --ignore-scripts to avoid running prepare/postinstall hooks before deps are installed
     console.log('Running npm install --package-lock-only --dry-run...\n');
 
     try {
-      const output = execSync('npm install --package-lock-only --dry-run', {
+      const output = execSync('npm install --package-lock-only --dry-run --ignore-scripts', {
         encoding: 'utf8',
         stdio: 'pipe'
       });
@@ -55,7 +56,7 @@ function validateLockFile() {
 
       // Additional check: try npm ci in dry-run mode
       console.log('Running npm ci --dry-run to verify sync...\n');
-      execSync('npm ci --dry-run', {
+      execSync('npm ci --dry-run --ignore-scripts', {
         encoding: 'utf8',
         stdio: 'pipe'
       });
