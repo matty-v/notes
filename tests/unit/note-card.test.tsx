@@ -71,18 +71,42 @@ describe('NoteCard', () => {
     expect(screen.getByPlaceholderText('Write your note...')).toBeInTheDocument()
   })
 
-  it('should call onDelete when delete button is clicked', async () => {
+  it('should call onDelete when delete button is clicked and confirmed', async () => {
     const user = userEvent.setup()
     const mockOnDeleteFn = vi.fn().mockResolvedValue(undefined)
     renderWithQueryClient(
       <NoteCard note={mockNote} onUpdate={mockOnUpdate} onDelete={mockOnDeleteFn} />
     )
 
+    // Click the trash icon to open the confirmation dialog
     const buttons = screen.getAllByRole('button')
     const deleteButton = buttons[buttons.length - 1]
     await user.click(deleteButton)
 
+    // Confirm deletion by clicking the "Delete" button in the dialog
+    const confirmDeleteButton = screen.getByRole('button', { name: /^Delete$/i })
+    await user.click(confirmDeleteButton)
+
     expect(mockOnDeleteFn).toHaveBeenCalled()
+  })
+
+  it('should not call onDelete when delete is cancelled', async () => {
+    const user = userEvent.setup()
+    const mockOnDeleteFn = vi.fn().mockResolvedValue(undefined)
+    renderWithQueryClient(
+      <NoteCard note={mockNote} onUpdate={mockOnUpdate} onDelete={mockOnDeleteFn} />
+    )
+
+    // Click the trash icon to open the confirmation dialog
+    const buttons = screen.getAllByRole('button')
+    const deleteButton = buttons[buttons.length - 1]
+    await user.click(deleteButton)
+
+    // Cancel deletion by clicking the "Cancel" button in the dialog
+    const cancelButton = screen.getByRole('button', { name: /Cancel/i })
+    await user.click(cancelButton)
+
+    expect(mockOnDeleteFn).not.toHaveBeenCalled()
   })
 
   it('should not show expand/collapse indicator for short content', () => {
