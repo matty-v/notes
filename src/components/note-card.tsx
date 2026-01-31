@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { NoteForm } from '@/components/note-form'
 import type { Note } from '@/lib/types'
 
@@ -15,6 +23,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [isTruncated, setIsTruncated] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const contentRef = useRef<HTMLParagraphElement>(null)
 
   const tags = (note.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
@@ -38,6 +47,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
     setIsDeleting(true)
     try {
       await onDelete()
+      setShowDeleteConfirm(false)
     } finally {
       setIsDeleting(false)
     }
@@ -134,7 +144,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={isDeleting}
             className="hover:text-[var(--accent-pink)] hover:bg-[rgba(236,72,153,0.1)]"
           >
@@ -142,6 +152,33 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
           </Button>
         </div>
       </div>
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Note</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{note.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
