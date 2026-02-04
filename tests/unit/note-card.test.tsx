@@ -198,4 +198,91 @@ describe('NoteCard', () => {
 
     expect(screen.getByText('Show less')).toBeInTheDocument()
   })
+
+  describe('clickable links', () => {
+    it('should render URLs in content as clickable links', () => {
+      const noteWithUrl = createMockNote({
+        content: 'Check out https://example.com for more info',
+      })
+      renderWithQueryClient(
+        <NoteCard note={noteWithUrl} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      )
+
+      const link = screen.getByRole('link', { name: /https:\/\/example\.com/i })
+      expect(link).toBeInTheDocument()
+      expect(link).toHaveAttribute('href', 'https://example.com')
+    })
+
+    it('should render links with security attributes', () => {
+      const noteWithUrl = createMockNote({
+        content: 'Visit https://example.com',
+      })
+      renderWithQueryClient(
+        <NoteCard note={noteWithUrl} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      )
+
+      const link = screen.getByRole('link')
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    })
+
+    it('should stop click propagation on links to prevent card actions', async () => {
+      const user = userEvent.setup()
+      const noteWithUrl = createMockNote({
+        content: 'Click https://example.com here',
+      })
+
+      // Mock scrollHeight to trigger expand/collapse behavior
+      Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+        configurable: true,
+        value: 200,
+      })
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+        configurable: true,
+        value: 100,
+      })
+
+      renderWithQueryClient(
+        <NoteCard note={noteWithUrl} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      )
+
+      // Verify "Show more" appears (card is in expandable state)
+      expect(screen.getByText('Show more')).toBeInTheDocument()
+
+      const link = screen.getByRole('link')
+      await user.click(link)
+
+      // After clicking link, "Show more" should still be visible (not toggled to "Show less")
+      // because the click event was stopped from propagating to the parent
+      expect(screen.getByText('Show more')).toBeInTheDocument()
+      expect(screen.queryByText('Show less')).not.toBeInTheDocument()
+    })
+
+    it('should render www. URLs as clickable links with https prefix', () => {
+      const noteWithWww = createMockNote({
+        content: 'Go to www.example.com',
+      })
+      renderWithQueryClient(
+        <NoteCard note={noteWithWww} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      )
+
+      const link = screen.getByRole('link')
+      expect(link).toHaveTextContent('www.example.com')
+      expect(link).toHaveAttribute('href', 'https://www.example.com')
+    })
+
+    it('should render multiple URLs as separate clickable links', () => {
+      const noteWithMultipleUrls = createMockNote({
+        content: 'Check https://one.com and https://two.com',
+      })
+      renderWithQueryClient(
+        <NoteCard note={noteWithMultipleUrls} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      )
+
+      const links = screen.getAllByRole('link')
+      expect(links).toHaveLength(2)
+      expect(links[0]).toHaveAttribute('href', 'https://one.com')
+      expect(links[1]).toHaveAttribute('href', 'https://two.com')
+    })
+  })
 })

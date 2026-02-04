@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
+import { linkify } from '@/lib/linkify'
 import type { Note } from '@/lib/types'
 
 interface NoteCardProps {
@@ -92,7 +93,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
               isExpanded ? '' : 'line-clamp-3'
             }`}
           >
-            {note.content}
+            {linkify(note.content)}
           </p>
           {(isTruncated || isExpanded) && (
             <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors">
