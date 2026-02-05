@@ -1,13 +1,17 @@
 import { RefreshCw, Wifi, WifiOff } from 'lucide-react'
-import { useSync } from '@/hooks/use-sync'
 import { cn } from '@/lib/utils'
 
-export function SyncStatus() {
-  const { isOnline, isSyncing, pendingCount, sync } = useSync()
+interface SyncStatusProps {
+  isOnline: boolean
+  isSyncing: boolean
+  pendingCount: number
+  onSync: () => void
+}
 
+export function SyncStatus({ isOnline, isSyncing, pendingCount, onSync }: SyncStatusProps) {
   return (
     <button
-      onClick={sync}
+      onClick={onSync}
       disabled={!isOnline || isSyncing}
       className={cn(
         'inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg transition-all duration-300 border',

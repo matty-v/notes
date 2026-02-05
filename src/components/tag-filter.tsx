@@ -4,10 +4,11 @@ import { useTags } from '@/hooks/use-tags'
 interface TagFilterProps {
   selected: string[]
   onChange: (tags: string[]) => void
+  sourceId?: string
 }
 
-export function TagFilter({ selected, onChange }: TagFilterProps) {
-  const { tags } = useTags()
+export function TagFilter({ selected, onChange, sourceId }: TagFilterProps) {
+  const { tags } = useTags(sourceId)
 
   const toggleTag = (tag: string) => {
     if (selected.includes(tag)) {

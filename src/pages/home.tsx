@@ -8,19 +8,23 @@ import { NoteCard } from '@/components/note-card'
 import { TagFilter } from '@/components/tag-filter'
 import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
+import { SourceSelector } from '@/components/source-selector'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
+import { useSources } from '@/hooks/use-sources'
+import { useSync } from '@/hooks/use-sync'
 import type { SortOrder } from '@/lib/types'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
+
+  const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
+  const { isOnline, isSyncing, pendingCount, sync } = useSync(activeSource)
   const {
-    spreadsheetId,
-    connectSpreadsheet,
+    initializeSheets,
     isInitializing,
-    status,
     anthropicApiKey,
     setAnthropicApiKey,
     clearAnthropicApiKey,
@@ -30,6 +34,7 @@ export function HomePage() {
     search,
     tagFilter,
     sortOrder,
+    sourceId: activeSource?.id,
   })
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -42,17 +47,38 @@ export function HomePage() {
     getItemKey: (index) => notes[index]?.id ?? index,
   })
 
+  const handleSourceChange = (sourceId: string) => {
+    setActiveSourceId(sourceId)
+    setTagFilter([])  // Reset tag filter when changing source
+  }
+
   return (
     <div className="h-screen flex flex-col max-w-2xl mx-auto p-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight"><span className="glow-cyan">Notes</span></h1>
+        <div className="flex items-center gap-3 min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            <span className="glow-cyan">{activeSource?.name || 'Notes'}</span>
+          </h1>
+          <SourceSelector
+            sources={sources}
+            activeSourceId={activeSource?.id || null}
+            onSourceChange={handleSourceChange}
+          />
+        </div>
         <div className="flex items-center gap-2">
-          <SyncStatus />
+          <SyncStatus
+            isOnline={isOnline}
+            isSyncing={isSyncing}
+            pendingCount={pendingCount}
+            onSync={sync}
+          />
           <SettingsDialog
-            spreadsheetId={spreadsheetId}
-            onSave={connectSpreadsheet}
-            isSaving={isInitializing}
-            status={status}
+            sources={sources}
+            onAddSource={addSource}
+            onUpdateSource={updateSource}
+            onRemoveSource={removeSource}
+            onInitialize={initializeSheets}
+            isInitializing={isInitializing}
             anthropicApiKey={anthropicApiKey}
             onSaveApiKey={setAnthropicApiKey}
             onClearApiKey={clearAnthropicApiKey}
@@ -60,6 +86,7 @@ export function HomePage() {
         </div>
       </div>
 
+      {/* Search and sort controls */}
       <div className="flex items-center gap-2 mb-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -82,7 +109,7 @@ export function HomePage() {
       </div>
 
       <div className="mb-4">
-        <TagFilter selected={tagFilter} onChange={setTagFilter} />
+        <TagFilter selected={tagFilter} onChange={setTagFilter} sourceId={activeSource?.id} />
       </div>
 
       <div className="mb-4">
