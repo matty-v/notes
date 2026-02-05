@@ -15,6 +15,7 @@ export function createMockNote(overrides?: Partial<Note>): Note {
 
   return {
     id,
+    sourceId: 'test-source',
     title: 'Test Note',
     content: 'Test content',
     tags: '',
@@ -36,6 +37,7 @@ export function createMockPendingSync(overrides?: Partial<PendingSync>): Pending
 
   return {
     id,
+    sourceId: 'test-source',
     noteId: '1',
     operation: 'create',
     timestamp: now,

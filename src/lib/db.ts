@@ -11,6 +11,22 @@ export class NotesDB extends Dexie {
       notes: 'id, title, createdAt, updatedAt',
       pendingSync: 'id, noteId, operation, timestamp',
     })
+
+    this.version(2)
+      .stores({
+        notes: 'id, sourceId, title, createdAt, updatedAt',
+        pendingSync: 'id, sourceId, noteId, operation, timestamp',
+      })
+      .upgrade((tx) => {
+        return tx
+          .table('notes')
+          .toCollection()
+          .modify((note) => {
+            if (!note.sourceId) {
+              note.sourceId = 'default'
+            }
+          })
+      })
   }
 }
 
