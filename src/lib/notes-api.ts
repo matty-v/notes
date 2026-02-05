@@ -1,35 +1,25 @@
 import { SheetsDbClient } from '@/services/sheetsdb'
-import { API_BASE_URL, LOCAL_STORAGE_KEYS } from '@/config/constants'
+import { API_BASE_URL } from '@/config/constants'
 
-function getSpreadsheetId(): string | null {
-  return localStorage.getItem(LOCAL_STORAGE_KEYS.SPREADSHEET_ID)
-}
-
-function createClient(): SheetsDbClient | null {
-  const spreadsheetId = getSpreadsheetId()
-  if (!spreadsheetId) return null
-
+function createClient(spreadsheetId: string): SheetsDbClient {
   return new SheetsDbClient({
     baseUrl: API_BASE_URL,
     spreadsheetId,
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getNotesSheet(): ReturnType<SheetsDbClient['sheet']> | null {
-  const client = createClient()
-  return client?.sheet('notes') ?? null
+export function getNotesSheet(spreadsheetId: string): ReturnType<SheetsDbClient['sheet']> {
+  const client = createClient(spreadsheetId)
+  return client.sheet('notes')
 }
 
-export function getSheetsClient(): SheetsDbClient | null {
-  return createClient()
+export function getSheetsClient(spreadsheetId: string): SheetsDbClient {
+  return createClient(spreadsheetId)
 }
 
-export async function isApiAvailable(): Promise<boolean> {
-  const client = createClient()
-  if (!client) return false
-
+export async function isApiAvailable(spreadsheetId: string): Promise<boolean> {
   try {
+    const client = createClient(spreadsheetId)
     await client.health()
     return true
   } catch {
@@ -37,6 +27,11 @@ export async function isApiAvailable(): Promise<boolean> {
   }
 }
 
-export function isConfigured(): boolean {
-  return !!getSpreadsheetId()
+export async function isApiReachable(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`)
+    return response.ok
+  } catch {
+    return false
+  }
 }

@@ -1,8 +1,7 @@
-import { useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { v4 as uuid } from 'uuid'
 import { db } from '@/lib/db'
-import { queueSync, pullFromRemote } from '@/lib/sync'
+import { queueSync } from '@/lib/sync'
 import type { Note, SortOrder } from '@/lib/types'
 import {
   generateMetadata,
@@ -20,29 +19,25 @@ interface UseNotesOptions {
   search?: string
   tagFilter?: string[]
   sortOrder?: SortOrder
+  sourceId?: string
 }
 
 export function useNotes(options: UseNotesOptions = {}) {
   const queryClient = useQueryClient()
-  const { search = '', tagFilter = [], sortOrder = 'newest' } = options
-  const hasFetched = useRef(false)
-
-  useEffect(() => {
-    if (hasFetched.current) return
-    hasFetched.current = true
-
-    pullFromRemote().then(() => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] })
-    })
-  }, [queryClient])
+  const { search = '', tagFilter = [], sortOrder = 'newest', sourceId } = options
 
   const { data: notes = [], isLoading } = useQuery({
-    queryKey: ['notes', search, tagFilter, sortOrder],
+    queryKey: ['notes', sourceId, search, tagFilter, sortOrder],
     queryFn: async () => {
       let results = await db.notes.toArray()
 
       // Filter out soft-deleted notes
       results = results.filter((n) => !n.deletedAt)
+
+      // Filter by sourceId if provided
+      if (sourceId) {
+        results = results.filter((n) => n.sourceId === sourceId)
+      }
 
       if (search) {
         const lower = search.toLowerCase()
@@ -91,6 +86,7 @@ export function useNotes(options: UseNotesOptions = {}) {
       const now = new Date().toISOString()
       const note: Note = {
         id: uuid(),
+        sourceId: sourceId || '',
         title,
         content: input.content,
         tags,
@@ -134,6 +130,7 @@ export function useNotes(options: UseNotesOptions = {}) {
         ...updates,
         title,
         tags,
+        sourceId: existing.sourceId,
         updatedAt: new Date().toISOString(),
       }
       await db.notes.put(updated)
