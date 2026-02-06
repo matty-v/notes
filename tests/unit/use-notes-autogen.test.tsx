@@ -190,6 +190,7 @@ describe('useNotes - Auto-generation', () => {
       // First create a note
       await db.notes.add({
         id: 'test-1',
+        sourceId: 'test-source',
         title: 'Original Title',
         content: 'Original content',
         tags: 'tag1',
@@ -225,6 +226,7 @@ describe('useNotes - Auto-generation', () => {
       // First create a note
       await db.notes.add({
         id: 'test-1',
+        sourceId: 'test-source',
         title: 'Title',
         content: 'Content',
         tags: 'tag1',
@@ -259,6 +261,7 @@ describe('useNotes - Auto-generation', () => {
       // First create a note
       await db.notes.add({
         id: 'test-1',
+        sourceId: 'test-source',
         title: 'Title',
         content: 'Content',
         tags: 'tag1',
@@ -291,6 +294,7 @@ describe('useNotes - Auto-generation', () => {
       // First create a note
       await db.notes.add({
         id: 'test-1',
+        sourceId: 'test-source',
         title: 'Title',
         content: 'Content',
         tags: 'tag1',

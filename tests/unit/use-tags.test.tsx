@@ -24,6 +24,7 @@ describe('useTags', () => {
     // Add a regular note with tags
     await db.notes.add({
       id: 'note-1',
+      sourceId: 'test-source',
       title: 'Active Note',
       content: 'Content',
       tags: 'active-tag, shared-tag',
@@ -34,6 +35,7 @@ describe('useTags', () => {
     // Add a soft-deleted note with different tags
     await db.notes.add({
       id: 'note-2',
+      sourceId: 'test-source',
       title: 'Deleted Note',
       content: 'Content',
       tags: 'deleted-tag, shared-tag',

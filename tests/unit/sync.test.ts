@@ -5,8 +5,11 @@ import type { Note } from '@/lib/types'
 
 vi.mock('@/lib/notes-api', () => ({
   getNotesSheet: vi.fn(),
-  isApiAvailable: vi.fn(),
+  isApiReachable: vi.fn(),
 }))
+
+const TEST_SOURCE_ID = 'test-source'
+const TEST_SPREADSHEET_ID = 'test-spreadsheet-123'
 
 describe('Sync Service', () => {
   beforeEach(async () => {
@@ -15,8 +18,9 @@ describe('Sync Service', () => {
   })
 
   it('should queue a create operation', async () => {
-    const note = {
+    const note: Note = {
       id: 'note-1',
+      sourceId: TEST_SOURCE_ID,
       title: 'Test',
       content: 'Content',
       tags: '',
@@ -30,23 +34,78 @@ describe('Sync Service', () => {
     expect(count).toBe(1)
   })
 
+  it('should queue a create operation with sourceId', async () => {
+    const note: Note = {
+      id: 'note-1',
+      sourceId: TEST_SOURCE_ID,
+      title: 'Test',
+      content: 'Content',
+      tags: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    await queueSync('create', note)
+
+    const pending = await db.pendingSync.toArray()
+    expect(pending[0].sourceId).toBe(TEST_SOURCE_ID)
+  })
+
   it('should queue a delete operation', async () => {
-    await queueSync('delete', { id: 'note-1' } as Note)
+    const note: Note = {
+      id: 'note-1',
+      sourceId: TEST_SOURCE_ID,
+      title: '',
+      content: '',
+      tags: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    await queueSync('delete', note)
 
     const pending = await db.pendingSync.toArray()
     expect(pending[0].operation).toBe('delete')
     expect(pending[0].noteId).toBe('note-1')
   })
 
-  describe('pullFromRemote', () => {
-it('should delete local notes when remote has deletedAt set', async () => {
-      const { getNotesSheet, isApiAvailable } = await import('@/lib/notes-api')
-      const mockedGetNotesSheet = vi.mocked(getNotesSheet)
-      const mockedIsApiAvailable = vi.mocked(isApiAvailable)
+  it('should count pending items by sourceId', async () => {
+    const note1: Note = {
+      id: 'note-1',
+      sourceId: 'source-a',
+      title: 'Test',
+      content: '',
+      tags: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    const note2: Note = {
+      id: 'note-2',
+      sourceId: 'source-b',
+      title: 'Test',
+      content: '',
+      tags: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
 
-      // Local has a note
+    await queueSync('create', note1)
+    await queueSync('create', note2)
+
+    expect(await getPendingCount()).toBe(2)
+    expect(await getPendingCount('source-a')).toBe(1)
+    expect(await getPendingCount('source-b')).toBe(1)
+    expect(await getPendingCount('source-c')).toBe(0)
+  })
+
+  describe('pullFromRemote', () => {
+    it('should delete local notes when remote has deletedAt set', async () => {
+      const { getNotesSheet, isApiReachable } = await import('@/lib/notes-api')
+      const mockedGetNotesSheet = vi.mocked(getNotesSheet)
+      const mockedIsApiReachable = vi.mocked(isApiReachable)
+
       const localNote: Note = {
         id: 'note-1',
+        sourceId: TEST_SOURCE_ID,
         title: 'Local Note',
         content: 'This exists locally',
         tags: '',
@@ -55,34 +114,31 @@ it('should delete local notes when remote has deletedAt set', async () => {
       }
       await db.notes.add(localNote)
 
-      // Remote has the same note but with deletedAt set (deleted on another device)
-      const remoteNote: Note = {
+      const remoteNote = {
         ...localNote,
         deletedAt: '2024-01-02T00:00:00.000Z',
         updatedAt: '2024-01-02T00:00:00.000Z',
       }
 
-      mockedIsApiAvailable.mockResolvedValue(true)
+      mockedIsApiReachable.mockResolvedValue(true)
       mockedGetNotesSheet.mockReturnValue({
         getRows: vi.fn().mockResolvedValue([remoteNote]),
       } as never)
 
-      // Pull from remote
-      await pullFromRemote()
+      await pullFromRemote(TEST_SOURCE_ID, TEST_SPREADSHEET_ID)
 
-      // The local note should be deleted because remote has deletedAt
       const result = await db.notes.get('note-1')
       expect(result).toBeUndefined()
     })
 
     it('should not restore notes that have pending delete operations', async () => {
-      const { getNotesSheet, isApiAvailable } = await import('@/lib/notes-api')
+      const { getNotesSheet, isApiReachable } = await import('@/lib/notes-api')
       const mockedGetNotesSheet = vi.mocked(getNotesSheet)
-      const mockedIsApiAvailable = vi.mocked(isApiAvailable)
+      const mockedIsApiReachable = vi.mocked(isApiReachable)
 
-      // Remote has a note
       const remoteNote: Note = {
         id: 'note-to-delete',
+        sourceId: TEST_SOURCE_ID,
         title: 'Should Not Restore',
         content: 'This note was deleted locally',
         tags: '',
@@ -90,20 +146,43 @@ it('should delete local notes when remote has deletedAt set', async () => {
         updatedAt: '2024-01-01T00:00:00.000Z',
       }
 
-      mockedIsApiAvailable.mockResolvedValue(true)
+      mockedIsApiReachable.mockResolvedValue(true)
       mockedGetNotesSheet.mockReturnValue({
         getRows: vi.fn().mockResolvedValue([remoteNote]),
       } as never)
 
-      // Queue a delete for this note (simulating user deleted it locally)
       await queueSync('delete', remoteNote)
 
-      // Pull from remote
-      await pullFromRemote()
+      await pullFromRemote(TEST_SOURCE_ID, TEST_SPREADSHEET_ID)
 
-      // The note should NOT be restored because there's a pending delete
       const localNote = await db.notes.get('note-to-delete')
       expect(localNote).toBeUndefined()
+    })
+
+    it('should set sourceId on pulled remote notes', async () => {
+      const { getNotesSheet, isApiReachable } = await import('@/lib/notes-api')
+      const mockedGetNotesSheet = vi.mocked(getNotesSheet)
+      const mockedIsApiReachable = vi.mocked(isApiReachable)
+
+      const remoteNote = {
+        id: 'note-remote',
+        title: 'Remote Note',
+        content: 'From remote',
+        tags: '',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      }
+
+      mockedIsApiReachable.mockResolvedValue(true)
+      mockedGetNotesSheet.mockReturnValue({
+        getRows: vi.fn().mockResolvedValue([remoteNote]),
+      } as never)
+
+      await pullFromRemote(TEST_SOURCE_ID, TEST_SPREADSHEET_ID)
+
+      const localNote = await db.notes.get('note-remote')
+      expect(localNote).toBeDefined()
+      expect(localNote!.sourceId).toBe(TEST_SOURCE_ID)
     })
   })
 })
