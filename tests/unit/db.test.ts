@@ -10,6 +10,7 @@ describe('NotesDB', () => {
   it('should create a note in IndexedDB', async () => {
     const note = {
       id: 'test-123',
+      sourceId: 'test-source',
       title: 'Test Note',
       content: 'Test content',
       tags: 'work,urgent',
@@ -26,6 +27,7 @@ describe('NotesDB', () => {
   it('should add pending sync entry', async () => {
     const pending = {
       id: 'sync-1',
+      sourceId: 'test-source',
       noteId: 'test-123',
       operation: 'create' as const,
       timestamp: '2026-01-11T00:00:00.000Z',

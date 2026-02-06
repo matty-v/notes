@@ -14,6 +14,14 @@ vi.mock('@/lib/sync', () => ({
   getPendingCount: vi.fn().mockResolvedValue(0),
 }))
 
+// Mock notes-api to prevent real HTTP calls
+vi.mock('@/lib/notes-api', () => ({
+  getNotesSheet: vi.fn(),
+  isApiReachable: vi.fn().mockResolvedValue(false),
+  isApiAvailable: vi.fn().mockResolvedValue(false),
+  getSheetsClient: vi.fn(),
+}))
+
 // Mock ResizeObserver for virtualization
 class ResizeObserverMock {
   observe() {}
@@ -77,6 +85,7 @@ function createMockNote(index: number): Note {
   now.setMinutes(now.getMinutes() - index)
   return {
     id: `note-${index}`,
+    sourceId: 'test-source',
     title: `Test Note ${index}`,
     content: `Content for note ${index}`,
     tags: `tag${index % 3}`,

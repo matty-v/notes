@@ -8,51 +8,37 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { SheetsSettingsPanel } from '@/components/sheets'
+import { SourceManager } from '@/components/source-manager'
 import { AnthropicSettingsPanel } from '@/components/anthropic'
-import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
+import type { NoteSource } from '@/lib/types'
 
 interface SettingsDialogProps {
-  spreadsheetId: string
-  onSave: (newId: string) => Promise<boolean>
-  isSaving: boolean
-  status: string
+  sources: NoteSource[]
+  onAddSource: (name: string, spreadsheetId: string) => void
+  onUpdateSource: (id: string, updates: Partial<Omit<NoteSource, 'id'>>) => void
+  onRemoveSource: (id: string) => void
+  onInitialize: (spreadsheetId: string) => Promise<boolean>
+  isInitializing: boolean
   anthropicApiKey: string
   onSaveApiKey: (key: string) => void
   onClearApiKey: () => void
 }
 
 export function SettingsDialog({
-  spreadsheetId,
-  onSave,
-  isSaving,
-  status,
+  sources,
+  onAddSource,
+  onUpdateSource,
+  onRemoveSource,
+  onInitialize,
+  isInitializing,
   anthropicApiKey,
   onSaveApiKey,
   onClearApiKey,
 }: SettingsDialogProps) {
   const [open, setOpen] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [tempId, setTempId] = useState('')
-
-  const handleSave = async () => {
-    const success = await onSave(tempId)
-    if (success) {
-      setIsEditing(false)
-      setTempId('')
-    }
-  }
-
-  const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen)
-    if (!newOpen) {
-      setIsEditing(false)
-      setTempId('')
-    }
-  }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
           <Settings className="h-4 w-4" />
@@ -65,16 +51,13 @@ export function SettingsDialog({
         <div className="space-y-6">
           <div>
             <h3 className="text-sm font-semibold mb-3 text-[var(--accent-cyan)]">Google Sheets Sync</h3>
-            <SheetsSettingsPanel
-              serviceAccountEmail={SERVICE_ACCOUNT_EMAIL}
-              spreadsheetId={spreadsheetId}
-              isEditing={isEditing}
-              onEditingChange={setIsEditing}
-              tempInputValue={tempId}
-              onTempInputChange={setTempId}
-              onSave={handleSave}
-              isSaving={isSaving}
-              status={status}
+            <SourceManager
+              sources={sources}
+              onAdd={onAddSource}
+              onUpdate={onUpdateSource}
+              onRemove={onRemoveSource}
+              onInitialize={onInitialize}
+              isInitializing={isInitializing}
             />
           </div>
           <div className="border-t border-[rgba(100,150,255,0.2)] pt-6">

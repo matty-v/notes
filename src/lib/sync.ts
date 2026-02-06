@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { db } from './db'
-import { getNotesSheet, isApiAvailable } from './notes-api'
+import { getNotesSheet, isApiReachable } from './notes-api'
 import type { Note, PendingSync } from './types'
 
 export async function queueSync(
@@ -10,23 +10,35 @@ export async function queueSync(
   await db.pendingSync.add({
     id: uuid(),
     noteId: note.id,
+    sourceId: note.sourceId,
     operation,
     data: operation !== 'delete' ? note : undefined,
     timestamp: new Date().toISOString(),
   })
 }
 
-export async function getPendingCount(): Promise<number> {
+export async function getPendingCount(sourceId?: string): Promise<number> {
+  if (sourceId) {
+    return db.pendingSync.where('sourceId').equals(sourceId).count()
+  }
   return db.pendingSync.count()
 }
 
-export async function processSyncQueue(): Promise<{ success: number; failed: number }> {
-  const notesSheet = getNotesSheet()
-  if (!notesSheet || !(await isApiAvailable())) {
+export async function processSyncQueue(
+  sourceId: string,
+  spreadsheetId: string
+): Promise<{ success: number; failed: number }> {
+  if (!(await isApiReachable())) {
     return { success: 0, failed: 0 }
   }
 
-  const pending = await db.pendingSync.orderBy('timestamp').toArray()
+  const notesSheet = getNotesSheet(spreadsheetId)
+
+  const pending = await db.pendingSync
+    .where('sourceId')
+    .equals(sourceId)
+    .sortBy('timestamp')
+
   let success = 0
   let failed = 0
 
@@ -62,18 +74,26 @@ export async function processSyncQueue(): Promise<{ success: number; failed: num
   return { success, failed }
 }
 
-export async function pullFromRemote(): Promise<void> {
-  const notesSheet = getNotesSheet()
-  if (!notesSheet || !(await isApiAvailable())) {
+export async function pullFromRemote(
+  sourceId: string,
+  spreadsheetId: string
+): Promise<void> {
+  if (!(await isApiReachable())) {
     return
   }
 
-  // Get all note IDs with pending delete operations
+  const notesSheet = getNotesSheet(spreadsheetId)
+
+  // Get all note IDs with pending delete operations for this source
   const pendingDeletes = await db.pendingSync
     .where('operation')
     .equals('delete')
     .toArray()
-  const pendingDeleteIds = new Set(pendingDeletes.map((p) => p.noteId))
+  const pendingDeleteIds = new Set(
+    pendingDeletes
+      .filter((p) => p.sourceId === sourceId)
+      .map((p) => p.noteId)
+  )
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const remoteNotes = (await notesSheet.getRows()) as any[]
@@ -90,8 +110,9 @@ export async function pullFromRemote(): Promise<void> {
     }
 
     const local = await db.notes.get(remote.id as string)
+    const remoteNote: Note = { ...remote, sourceId } as Note
     if (!local || new Date(remote.updatedAt as string) > new Date(local.updatedAt)) {
-      await db.notes.put(remote as Note)
+      await db.notes.put(remoteNote)
     }
   }
 }
