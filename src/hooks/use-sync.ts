@@ -51,6 +51,13 @@ export function useSync(activeSource: NoteSource | null) {
   }, [isOnline, pendingCount, sync])
 
   useEffect(() => {
+    if (isOnline && activeSource) {
+      sync()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSource?.id, isOnline])
+
+  useEffect(() => {
     if (!isOnline) return
     const interval = setInterval(sync, 30000)
     return () => clearInterval(interval)

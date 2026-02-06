@@ -33,7 +33,7 @@ function migrateOldSpreadsheetId(): { sources: NoteSource[]; activeSourceId: str
   const existingSources = getSources()
 
   if (oldId && existingSources.length === 0) {
-    const sourceId = generateId()
+    const sourceId = 'default'
     const source: NoteSource = {
       id: sourceId,
       name: 'Primary Notes',

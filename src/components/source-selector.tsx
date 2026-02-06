@@ -1,26 +1,38 @@
+import { ChevronDown } from 'lucide-react'
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
+import * as SelectPrimitive from '@radix-ui/react-select'
 import type { NoteSource } from '@/lib/types'
 
 interface SourceSelectorProps {
   sources: NoteSource[]
-  activeSourceId: string | null
+  activeSource: NoteSource | null
   onSourceChange: (sourceId: string) => void
 }
 
-export function SourceSelector({ sources, activeSourceId, onSourceChange }: SourceSelectorProps) {
-  if (sources.length <= 1) return null
+export function SourceSelector({ sources, activeSource, onSourceChange }: SourceSelectorProps) {
+  const displayName = activeSource?.name || 'Notes'
+  const hasMultiple = sources.length > 1
+
+  if (!hasMultiple) {
+    return (
+      <h1 className="text-2xl font-semibold tracking-tight">
+        <span className="glow-cyan">{displayName}</span>
+      </h1>
+    )
+  }
 
   return (
-    <Select value={activeSourceId || ''} onValueChange={onSourceChange}>
-      <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs bg-[rgba(18,24,33,0.5)] border-[rgba(100,150,255,0.2)]">
-        <SelectValue placeholder="Select source" />
-      </SelectTrigger>
+    <Select value={activeSource?.id || ''} onValueChange={onSourceChange}>
+      <SelectPrimitive.Trigger className="flex items-center gap-1.5 cursor-pointer group focus:outline-none">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          <span className="glow-cyan group-hover:opacity-80 transition-opacity">{displayName}</span>
+        </h1>
+        <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-[var(--accent-cyan)] transition-colors mt-1" />
+      </SelectPrimitive.Trigger>
       <SelectContent>
         {sources.map((source) => (
           <SelectItem key={source.id} value={source.id}>
