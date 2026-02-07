@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HomePage } from '@/pages/home'
 import { SheetsSetupWizard } from '@/components/sheets'
 import { AnimatedBackground } from '@/components/animated-background'
+import { Toaster } from '@/components/ui/toaster'
 import { useSources } from '@/hooks/use-sources'
 import { useSettings } from '@/hooks/use-settings'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
@@ -68,6 +69,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppContent />
+      <Toaster />
     </QueryClientProvider>
   )
 }
