@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { Pencil, Trash2, Plus, X, Check } from 'lucide-react'
+import { Pencil, Trash2, Plus, X, Check, Download } from 'lucide-react'
 import type { NoteSource } from '@/lib/types'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
+import { exportNotesForSource } from '@/lib/csv-export'
+import { toast } from '@/hooks/use-toast'
 
 interface SourceManagerProps {
   sources: NoteSource[]
@@ -65,6 +67,22 @@ export function SourceManager({
     setEditSpreadsheetId('')
   }
 
+  const handleExport = async (source: NoteSource) => {
+    try {
+      const count = await exportNotesForSource(source.id, source.name)
+      toast({
+        title: 'Export complete',
+        description: `Exported ${count} note${count !== 1 ? 's' : ''} from "${source.name}"`,
+      })
+    } catch {
+      toast({
+        variant: 'destructive',
+        title: 'Export failed',
+        description: 'Could not export notes. Please try again.',
+      })
+    }
+  }
+
   return (
     <div className="space-y-3">
       {/* Source list */}
@@ -118,6 +136,14 @@ export function SourceManager({
                 </a>
               </div>
               <div className="flex gap-1 ml-2">
+                <button
+                  type="button"
+                  onClick={() => handleExport(source)}
+                  title="Export notes as CSV"
+                  className="p-1.5 text-muted-foreground hover:text-[var(--accent-purple)] transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                </button>
                 <button
                   type="button"
                   onClick={() => handleStartEdit(source)}
