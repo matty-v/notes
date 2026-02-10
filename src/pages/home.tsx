@@ -9,10 +9,12 @@ import { TagFilter } from '@/components/tag-filter'
 import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { SourceSelector } from '@/components/source-selector'
+import { ViewModeToggle } from '@/components/view-mode-toggle'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
 import { useSync } from '@/hooks/use-sync'
+import { useViewMode } from '@/hooks/use-view-mode'
 import type { SortOrder } from '@/lib/types'
 
 export function HomePage() {
@@ -29,6 +31,7 @@ export function HomePage() {
     setAnthropicApiKey,
     clearAnthropicApiKey,
   } = useSettings()
+  const { viewMode, setViewMode } = useViewMode()
 
   const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
     search,
@@ -103,6 +106,7 @@ export function HomePage() {
             <SelectItem value="oldest">Oldest</SelectItem>
           </SelectContent>
         </Select>
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
       </div>
 
       <div className="mb-4">
@@ -113,47 +117,73 @@ export function HomePage() {
         <NoteForm onSubmit={createNote} />
       </div>
 
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-        {isLoading ? (
-          <p className="text-center text-muted-foreground font-light">Loading...</p>
-        ) : notes.length === 0 ? (
-          <p className="text-center text-muted-foreground font-light py-8">
-            {search || tagFilter.length > 0
-              ? 'No notes match your filters'
-              : 'No notes yet. Create your first note above!'}
-          </p>
-        ) : (
-          <div
-            style={{
-              height: virtualizer.getTotalSize(),
-              position: 'relative',
-            }}
-          >
-            {virtualizer.getVirtualItems().map((virtualRow) => (
-              <div
-                key={virtualRow.key}
-                data-index={virtualRow.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-              >
-                <div className="pb-3">
-                  <NoteCard
-                    note={notes[virtualRow.index]}
-                    onUpdate={(data) => updateNote({ id: notes[virtualRow.index].id, ...data })}
-                    onDelete={() => deleteNote(notes[virtualRow.index].id)}
-                  />
+      {viewMode === 'list' ? (
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground font-light">Loading...</p>
+          ) : notes.length === 0 ? (
+            <p className="text-center text-muted-foreground font-light py-8">
+              {search || tagFilter.length > 0
+                ? 'No notes match your filters'
+                : 'No notes yet. Create your first note above!'}
+            </p>
+          ) : (
+            <div
+              style={{
+                height: virtualizer.getTotalSize(),
+                position: 'relative',
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div className="pb-3">
+                    <NoteCard
+                      note={notes[virtualRow.index]}
+                      onUpdate={(data) => updateNote({ id: notes[virtualRow.index].id, ...data })}
+                      onDelete={() => deleteNote(notes[virtualRow.index].id)}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <p className="text-center text-muted-foreground font-light">Loading...</p>
+          ) : notes.length === 0 ? (
+            <p className="text-center text-muted-foreground font-light py-8">
+              {search || tagFilter.length > 0
+                ? 'No notes match your filters'
+                : 'No notes yet. Create your first note above!'}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-3">
+              {notes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  variant="grid"
+                  onUpdate={(data) => updateNote({ id: note.id, ...data })}
+                  onDelete={() => deleteNote(note.id)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

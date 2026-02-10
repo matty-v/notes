@@ -5,6 +5,7 @@ export const LOCAL_STORAGE_KEYS = {
   ANTHROPIC_API_KEY: 'notesAnthropicApiKey',
   SOURCES: 'notesSources',
   ACTIVE_SOURCE_ID: 'notesActiveSourceId',
+  VIEW_MODE: 'notesViewMode',
 }
 
 export const SERVICE_ACCOUNT_EMAIL = 'sheets-db-api@kinetic-object-322814.iam.gserviceaccount.com'
