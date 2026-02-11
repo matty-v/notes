@@ -56,7 +56,7 @@ export function HomePage() {
   }
 
   return (
-    <div className="h-screen flex flex-col max-w-2xl mx-auto p-4">
+    <div className="h-screen flex flex-col w-full p-4 lg:p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 min-w-0">
           <SourceSelector
