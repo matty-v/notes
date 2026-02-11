@@ -10,11 +10,14 @@ import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { SourceSelector } from '@/components/source-selector'
 import { ViewModeToggle } from '@/components/view-mode-toggle'
+import { KanbanBoardView } from '@/components/kanban-board-view'
+import { KanbanConfigDialog } from '@/components/kanban-config-dialog'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
 import { useSync } from '@/hooks/use-sync'
 import { useViewMode } from '@/hooks/use-view-mode'
+import { useKanbanConfig } from '@/hooks/use-kanban-config'
 import type { Note } from '@/lib/types'
 
 export function HomePage() {
@@ -23,6 +26,7 @@ export function HomePage() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
 
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const { isOnline, isSyncing, pendingCount, sync } = useSync(activeSource)
@@ -35,6 +39,7 @@ export function HomePage() {
     resetCache,
   } = useSettings()
   const { viewMode, setViewMode } = useViewMode()
+  const kanbanConfig = useKanbanConfig(activeSource?.id ?? 'default')
 
   const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
     search,
@@ -115,7 +120,11 @@ export function HomePage() {
             className="pl-9"
           />
         </div>
-        <ViewModeToggle value={viewMode} onChange={setViewMode} />
+        <ViewModeToggle
+          value={viewMode}
+          onChange={setViewMode}
+          onConfigureKanban={() => setIsKanbanConfigOpen(true)}
+        />
       </div>
 
       <div className="mb-4">
@@ -163,7 +172,7 @@ export function HomePage() {
             </div>
           )}
         </div>
-      ) : (
+      ) : viewMode === 'grid' ? (
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
             <p className="text-center text-muted-foreground font-light">Loading...</p>
@@ -186,6 +195,20 @@ export function HomePage() {
             </div>
           )}
         </div>
+      ) : (
+        <KanbanBoardView
+          notes={notes}
+          config={kanbanConfig.config}
+          onNoteClick={handleOpenModal}
+          onOpenConfig={() => setIsKanbanConfigOpen(true)}
+          onUpdateNote={(noteId, tags) => {
+            const note = notes.find((n) => n.id === noteId)
+            if (note) {
+              updateNote({ id: noteId, tags })
+            }
+          }}
+          isLoading={isLoading}
+        />
       )}
 
       <CreateNoteModal
@@ -224,6 +247,17 @@ export function HomePage() {
       >
         <Plus className="h-6 w-6" />
       </button>
+
+      <KanbanConfigDialog
+        open={isKanbanConfigOpen}
+        onOpenChange={setIsKanbanConfigOpen}
+        config={kanbanConfig.config}
+        sourceId={activeSource?.id ?? 'default'}
+        onAddColumn={kanbanConfig.addColumn}
+        onRemoveColumn={kanbanConfig.removeColumn}
+        onReorderColumn={kanbanConfig.reorderColumn}
+        onUpdateDefaultColumn={kanbanConfig.updateDefaultColumn}
+      />
     </div>
   )
 }
