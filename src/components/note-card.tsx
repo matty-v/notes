@@ -9,9 +9,10 @@ interface NoteCardProps {
   note: Note
   onUpdate: (data: { title: string; content: string; tags: string }) => Promise<unknown>
   onDelete: () => Promise<unknown>
+  variant?: 'list' | 'grid'
 }
 
-export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
+export function NoteCard({ note, onUpdate, onDelete, variant = 'list' }: NoteCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -68,11 +69,18 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
     )
   }
 
+  const isGrid = variant === 'grid'
+  const cardPadding = isGrid ? 'p-3' : 'p-4'
+  const titleSize = isGrid ? 'text-sm' : 'font-medium'
+  const contentSize = isGrid ? 'text-xs' : 'text-sm'
+  const contentClamp = isGrid ? 'line-clamp-2' : 'line-clamp-3'
+  const minHeight = isGrid ? 'min-h-[200px]' : ''
+
   return (
-    <div className="p-4 rounded-xl bg-[rgba(18,24,33,0.7)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_40px_rgba(0,212,255,0.05),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:border-[rgba(167,139,250,0.4)] hover:shadow-[0_0_60px_rgba(167,139,250,0.1),inset_0_1px_0_rgba(255,255,255,0.1)]">
+    <div className={`${cardPadding} rounded-xl bg-[rgba(18,24,33,0.7)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_40px_rgba(0,212,255,0.05),inset_0_1px_0_rgba(255,255,255,0.05)] transition-all duration-300 hover:border-[rgba(167,139,250,0.4)] hover:shadow-[0_0_60px_rgba(167,139,250,0.1),inset_0_1px_0_rgba(255,255,255,0.1)] ${minHeight} flex flex-col`}>
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-medium text-foreground">{note.title}</h3>
-        <span className="text-sm text-muted-foreground whitespace-nowrap font-light">{date}</span>
+        <h3 className={`font-medium text-foreground ${titleSize}`}>{note.title}</h3>
+        <span className="text-xs text-muted-foreground whitespace-nowrap font-light">{date}</span>
       </div>
       {note.content && (
         <div
@@ -89,8 +97,8 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
         >
           <p
             ref={contentRef}
-            className={`text-sm text-muted-foreground font-light transition-all duration-300 ${
-              isExpanded ? '' : 'line-clamp-3'
+            className={`${contentSize} text-muted-foreground font-light transition-all duration-300 ${
+              isExpanded ? '' : contentClamp
             }`}
           >
             {linkify(note.content)}
@@ -112,7 +120,7 @@ export function NoteCard({ note, onUpdate, onDelete }: NoteCardProps) {
           )}
         </div>
       )}
-      <div className="mt-3 flex items-center justify-between">
+      <div className={`mt-3 flex ${isGrid ? 'flex-col gap-2' : 'items-center justify-between'}`}>
         <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
             <span

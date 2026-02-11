@@ -25,3 +25,5 @@ export interface NoteSource {
 }
 
 export type SortOrder = 'newest' | 'oldest'
+
+export type ViewMode = 'list' | 'grid'
