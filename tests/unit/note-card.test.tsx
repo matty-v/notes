@@ -26,7 +26,7 @@ function renderWithQueryClient(ui: React.ReactElement) {
 describe('NoteCard', () => {
   let mockNote: ReturnType<typeof createMockNote>
 
-  const mockOnUpdate = vi.fn().mockResolvedValue(undefined)
+  const mockOnOpenModal = vi.fn()
   const mockOnDelete = vi.fn().mockResolvedValue(undefined)
 
   beforeEach(() => {
@@ -41,7 +41,7 @@ describe('NoteCard', () => {
 
   it('should render note title and content', () => {
     renderWithQueryClient(
-      <NoteCard note={mockNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
     )
 
     expect(screen.getByText('Test Note')).toBeInTheDocument()
@@ -50,153 +50,57 @@ describe('NoteCard', () => {
 
   it('should render tags', () => {
     renderWithQueryClient(
-      <NoteCard note={mockNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
     )
 
     expect(screen.getByText('test')).toBeInTheDocument()
     expect(screen.getByText('example')).toBeInTheDocument()
   })
 
-  it('should show edit form when edit button is clicked', async () => {
+  it('should call onOpenModal when card is clicked', async () => {
     const user = userEvent.setup()
     renderWithQueryClient(
-      <NoteCard note={mockNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
     )
 
-    const buttons = screen.getAllByRole('button')
-    const editButton = buttons[0] // First button is the edit button
+    const card = screen.getByText('Test Note').closest('div')
+    await user.click(card!)
+
+    expect(mockOnOpenModal).toHaveBeenCalled()
+  })
+
+  it('should call onOpenModal when edit button is clicked', async () => {
+    const user = userEvent.setup()
+    renderWithQueryClient(
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+    )
+
+    const editButton = screen.getByRole('button', { name: /edit/i })
     await user.click(editButton)
 
-    expect(screen.getByPlaceholderText('Note title...')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Write your note...')).toBeInTheDocument()
+    expect(mockOnOpenModal).toHaveBeenCalled()
   })
 
   it('should call onDelete when delete button is clicked', async () => {
     const user = userEvent.setup()
     const mockOnDeleteFn = vi.fn().mockResolvedValue(undefined)
     renderWithQueryClient(
-      <NoteCard note={mockNote} onUpdate={mockOnUpdate} onDelete={mockOnDeleteFn} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDeleteFn} />
     )
 
-    const buttons = screen.getAllByRole('button')
-    const deleteButton = buttons[buttons.length - 1]
+    const deleteButton = screen.getByRole('button', { name: /delete/i })
     await user.click(deleteButton)
 
     expect(mockOnDeleteFn).toHaveBeenCalled()
   })
 
-  it('should not show expand/collapse indicator for short content', () => {
-    const shortNote = createMockNote({ content: 'Short content' })
+  it('should render with grid variant', () => {
     renderWithQueryClient(
-      <NoteCard note={shortNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} variant="grid" />
     )
 
-    expect(screen.queryByText('Show more')).not.toBeInTheDocument()
-    expect(screen.queryByText('Show less')).not.toBeInTheDocument()
-  })
-
-  it('should show "Show more" indicator for truncated content', () => {
-    const longNote = createMockNote({
-      content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    })
-
-    // Mock scrollHeight to be greater than clientHeight to simulate truncation
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      value: 200,
-    })
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-      configurable: true,
-      value: 100,
-    })
-
-    renderWithQueryClient(
-      <NoteCard note={longNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
-    )
-
-    expect(screen.getByText('Show more')).toBeInTheDocument()
-  })
-
-  it('should expand content when "Show more" is clicked', async () => {
-    const user = userEvent.setup()
-    const longNote = createMockNote({
-      content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    })
-
-    // Mock scrollHeight to be greater than clientHeight to simulate truncation
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      value: 200,
-    })
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-      configurable: true,
-      value: 100,
-    })
-
-    renderWithQueryClient(
-      <NoteCard note={longNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
-    )
-
-    const showMoreButton = screen.getByRole('button', { name: /show more/i })
-    await user.click(showMoreButton)
-
-    expect(screen.getByText('Show less')).toBeInTheDocument()
-  })
-
-  it('should collapse content when "Show less" is clicked', async () => {
-    const user = userEvent.setup()
-    const longNote = createMockNote({
-      content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    })
-
-    // Mock scrollHeight to be greater than clientHeight to simulate truncation
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      value: 200,
-    })
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-      configurable: true,
-      value: 100,
-    })
-
-    renderWithQueryClient(
-      <NoteCard note={longNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
-    )
-
-    const showMoreButton = screen.getByRole('button', { name: /show more/i })
-    await user.click(showMoreButton)
-
-    const showLessButton = screen.getByRole('button', { name: /show less/i })
-    await user.click(showLessButton)
-
-    expect(screen.getByText('Show more')).toBeInTheDocument()
-  })
-
-  it('should support keyboard navigation for expand/collapse', async () => {
-    const user = userEvent.setup()
-    const longNote = createMockNote({
-      content: 'This is a very long note content that will definitely be truncated because it has many lines. '.repeat(10),
-    })
-
-    // Mock scrollHeight to be greater than clientHeight to simulate truncation
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-      configurable: true,
-      value: 200,
-    })
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-      configurable: true,
-      value: 100,
-    })
-
-    renderWithQueryClient(
-      <NoteCard note={longNote} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
-    )
-
-    const showMoreButton = screen.getByRole('button', { name: /show more/i })
-    showMoreButton.focus()
-    await user.keyboard('{Enter}')
-
-    expect(screen.getByText('Show less')).toBeInTheDocument()
+    const card = screen.getByText('Test Note').closest('div')
+    expect(card).toHaveClass('min-h-\\[200px\\]')
   })
 
   describe('clickable links', () => {
@@ -205,7 +109,7 @@ describe('NoteCard', () => {
         content: 'Check out https://example.com for more info',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithUrl} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithUrl} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
       )
 
       const link = screen.getByRole('link', { name: /https:\/\/example\.com/i })
@@ -218,7 +122,7 @@ describe('NoteCard', () => {
         content: 'Visit https://example.com',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithUrl} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithUrl} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
       )
 
       const link = screen.getByRole('link')
@@ -226,44 +130,12 @@ describe('NoteCard', () => {
       expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     })
 
-    it('should stop click propagation on links to prevent card actions', async () => {
-      const user = userEvent.setup()
-      const noteWithUrl = createMockNote({
-        content: 'Click https://example.com here',
-      })
-
-      // Mock scrollHeight to trigger expand/collapse behavior
-      Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
-        configurable: true,
-        value: 200,
-      })
-      Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
-        configurable: true,
-        value: 100,
-      })
-
-      renderWithQueryClient(
-        <NoteCard note={noteWithUrl} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
-      )
-
-      // Verify "Show more" appears (card is in expandable state)
-      expect(screen.getByText('Show more')).toBeInTheDocument()
-
-      const link = screen.getByRole('link')
-      await user.click(link)
-
-      // After clicking link, "Show more" should still be visible (not toggled to "Show less")
-      // because the click event was stopped from propagating to the parent
-      expect(screen.getByText('Show more')).toBeInTheDocument()
-      expect(screen.queryByText('Show less')).not.toBeInTheDocument()
-    })
-
     it('should render www. URLs as clickable links with https prefix', () => {
       const noteWithWww = createMockNote({
         content: 'Go to www.example.com',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithWww} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithWww} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
       )
 
       const link = screen.getByRole('link')
@@ -276,7 +148,7 @@ describe('NoteCard', () => {
         content: 'Check https://one.com and https://two.com',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithMultipleUrls} onUpdate={mockOnUpdate} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithMultipleUrls} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
       )
 
       const links = screen.getAllByRole('link')

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NoteForm } from '@/components/note-form'
 import { NoteCard } from '@/components/note-card'
+import { NoteModal } from '@/components/note-modal'
 import { TagFilter } from '@/components/tag-filter'
 import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
@@ -15,12 +16,14 @@ import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
 import { useSync } from '@/hooks/use-sync'
 import { useViewMode } from '@/hooks/use-view-mode'
-import type { SortOrder } from '@/lib/types'
+import type { Note, SortOrder } from '@/lib/types'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const { isOnline, isSyncing, pendingCount, sync } = useSync(activeSource)
@@ -53,6 +56,16 @@ export function HomePage() {
   const handleSourceChange = (sourceId: string) => {
     setActiveSourceId(sourceId)
     setTagFilter([])  // Reset tag filter when changing source
+  }
+
+  const handleOpenModal = (note: Note) => {
+    setSelectedNote(note)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setTimeout(() => setSelectedNote(null), 200) // Clear after animation
   }
 
   return (
@@ -150,7 +163,7 @@ export function HomePage() {
                   <div className="pb-3">
                     <NoteCard
                       note={notes[virtualRow.index]}
-                      onUpdate={(data) => updateNote({ id: notes[virtualRow.index].id, ...data })}
+                      onOpenModal={() => handleOpenModal(notes[virtualRow.index])}
                       onDelete={() => deleteNote(notes[virtualRow.index].id)}
                     />
                   </div>
@@ -176,7 +189,7 @@ export function HomePage() {
                   key={note.id}
                   note={note}
                   variant="grid"
-                  onUpdate={(data) => updateNote({ id: note.id, ...data })}
+                  onOpenModal={() => handleOpenModal(note)}
                   onDelete={() => deleteNote(note.id)}
                 />
               ))}
@@ -184,6 +197,24 @@ export function HomePage() {
           )}
         </div>
       )}
+
+      <NoteModal
+        note={selectedNote}
+        open={isModalOpen}
+        onOpenChange={handleCloseModal}
+        onUpdate={(data) => {
+          if (selectedNote) {
+            return updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()
+          }
+          return Promise.resolve()
+        }}
+        onDelete={() => {
+          if (selectedNote) {
+            return (deleteNote(selectedNote.id) || Promise.resolve()).then(handleCloseModal)
+          }
+          return Promise.resolve()
+        }}
+      />
     </div>
   )
 }
