@@ -1,7 +1,9 @@
 import { marked } from 'marked'
 import { ReactNode } from 'react'
 
-// Configure marked to not parse URLs as links (we handle those with linkify)
+// Regex for detecting URLs (same as linkify)
+const URL_REGEX = /(\bhttps?:\/\/[^\s<>[\]{}|\\^`"']+|\bwww\.[^\s<>[\]{}|\\^`"']+)/gi
+
 const renderer = new marked.Renderer()
 
 // Override link rendering to open in new tab
@@ -44,7 +46,7 @@ renderer.list = ({ items, ordered }) => {
 marked.setOptions({
   renderer,
   breaks: true, // Convert \n to <br>
-  gfm: true, // Use GitHub Flavored Markdown
+  gfm: false, // Disable GFM to prevent auto-linking URLs (we handle that with regex)
 })
 
 function escapeHtml(text: string): string {
@@ -60,7 +62,13 @@ function escapeHtml(text: string): string {
 
 export function renderMarkdown(content: string): ReactNode {
   try {
-    const html = marked(content) as string
+    // First parse the markdown
+    let html = marked(content) as string
+    // Then linkify plain URLs in the HTML
+    html = html.replace(URL_REGEX, (match) => {
+      const href = match.startsWith('www.') ? `https://${match}` : match
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-[var(--accent-cyan)] hover:text-[var(--accent-purple)] underline underline-offset-2 transition-colors">${match}</a>`
+    })
     return (
       <div
         className="prose prose-invert max-w-none text-base text-muted-foreground font-light leading-relaxed"
