@@ -10,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { SourceManager } from '@/components/source-manager'
 import { AnthropicSettingsPanel } from '@/components/anthropic'
+import { CacheResetPanel } from '@/components/cache-reset-panel'
+import { useToast } from '@/hooks/use-toast'
 import type { NoteSource } from '@/lib/types'
 
 interface SettingsDialogProps {
@@ -22,6 +24,10 @@ interface SettingsDialogProps {
   anthropicApiKey: string
   onSaveApiKey: (key: string) => void
   onClearApiKey: () => void
+  activeSource: NoteSource | null
+  pendingCount: number
+  isOnline: boolean
+  onResetCache: (sourceId: string, spreadsheetId: string) => Promise<boolean>
 }
 
 export function SettingsDialog({
@@ -34,8 +40,32 @@ export function SettingsDialog({
   anthropicApiKey,
   onSaveApiKey,
   onClearApiKey,
+  activeSource,
+  pendingCount,
+  isOnline,
+  onResetCache,
 }: SettingsDialogProps) {
   const [open, setOpen] = useState(false)
+  const { toast } = useToast()
+
+  const handleResetCache = async (): Promise<boolean> => {
+    if (!activeSource) return false
+
+    const success = await onResetCache(activeSource.id, activeSource.spreadsheetId)
+    if (success) {
+      toast({
+        title: 'Cache reset complete',
+        description: 'Your notes have been refreshed from Google Sheets.',
+      })
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Reset failed',
+        description: 'Please check your connection and try again.',
+      })
+    }
+    return success
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -66,6 +96,15 @@ export function SettingsDialog({
               apiKey={anthropicApiKey}
               onSave={onSaveApiKey}
               onClear={onClearApiKey}
+            />
+          </div>
+          <div className="border-t border-[rgba(100,150,255,0.2)] pt-6">
+            <h3 className="text-sm font-semibold mb-3 text-[var(--accent-pink)]">Cache Management</h3>
+            <CacheResetPanel
+              activeSource={activeSource}
+              pendingCount={pendingCount}
+              isOnline={isOnline}
+              onReset={handleResetCache}
             />
           </div>
         </div>

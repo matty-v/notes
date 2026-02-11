@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { SheetsDbClient } from '@/services/sheetsdb'
+import { resetCacheForSource } from '@/lib/cache-reset'
 import { LOCAL_STORAGE_KEYS, API_BASE_URL, SHEETS_CONFIG } from '@/config/constants'
 
 export function useSettings() {
@@ -62,6 +63,33 @@ export function useSettings() {
     }
   }, [queryClient])
 
+  const resetCache = useCallback(async (
+    sourceId: string,
+    spreadsheetId: string
+  ): Promise<boolean> => {
+    setStatus('Resetting cache...')
+
+    try {
+      const result = await resetCacheForSource(sourceId, spreadsheetId, {
+        onProgress: (msg) => setStatus(msg),
+      })
+
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ['notes'] })
+        queryClient.invalidateQueries({ queryKey: ['tags'] })
+        queryClient.invalidateQueries({ queryKey: ['pendingSync'] })
+        setStatus('')
+        return true
+      } else {
+        setStatus(`Error: ${result.error}`)
+        return false
+      }
+    } catch (error) {
+      setStatus(`Error: ${error instanceof Error ? error.message : 'Reset failed'}`)
+      return false
+    }
+  }, [queryClient])
+
   return {
     anthropicApiKey,
     setAnthropicApiKey,
@@ -70,5 +98,6 @@ export function useSettings() {
     isInitializing,
     status,
     setStatus,
+    resetCache,
   }
 }

@@ -35,6 +35,7 @@ export function HomePage() {
     anthropicApiKey,
     setAnthropicApiKey,
     clearAnthropicApiKey,
+    resetCache,
   } = useSettings()
   const { viewMode, setViewMode } = useViewMode()
 
@@ -105,6 +106,10 @@ export function HomePage() {
             anthropicApiKey={anthropicApiKey}
             onSaveApiKey={setAnthropicApiKey}
             onClearApiKey={clearAnthropicApiKey}
+            activeSource={activeSource}
+            pendingCount={pendingCount}
+            isOnline={isOnline}
+            onResetCache={resetCache}
           />
         </div>
       </div>
