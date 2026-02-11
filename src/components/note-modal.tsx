@@ -86,8 +86,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
               <Button
                 variant="ghost"
                 size="sm"
-                type="submit"
-                form="note-edit-form"
+                onClick={() => (document.getElementById('note-edit-form') as HTMLFormElement)?.requestSubmit()}
               >
                 <Check className="h-4 w-4 mr-1.5" />
                 Update
