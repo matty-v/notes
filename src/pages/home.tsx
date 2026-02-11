@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NoteCard } from '@/components/note-card'
 import { NoteModal } from '@/components/note-modal'
 import { CreateNoteModal } from '@/components/create-note-modal'
@@ -16,12 +15,11 @@ import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
 import { useSync } from '@/hooks/use-sync'
 import { useViewMode } from '@/hooks/use-view-mode'
-import type { Note, SortOrder } from '@/lib/types'
+import type { Note } from '@/lib/types'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
-  const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -41,7 +39,7 @@ export function HomePage() {
   const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
     search,
     tagFilter,
-    sortOrder,
+    sortOrder: 'newest',
     sourceId: activeSource?.id,
   })
 
@@ -117,15 +115,6 @@ export function HomePage() {
             className="pl-9"
           />
         </div>
-        <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
-          <SelectTrigger className="w-[130px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">Newest</SelectItem>
-            <SelectItem value="oldest">Oldest</SelectItem>
-          </SelectContent>
-        </Select>
         <ViewModeToggle value={viewMode} onChange={setViewMode} />
       </div>
 
