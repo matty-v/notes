@@ -1,15 +1,13 @@
-import { Button } from '@/components/ui/button'
 import { linkify } from '@/lib/linkify'
 import type { Note } from '@/lib/types'
 
 interface NoteCardProps {
   note: Note
   onOpenModal: () => void
-  onDelete: () => Promise<unknown>
   variant?: 'list' | 'grid'
 }
 
-export function NoteCard({ note, onOpenModal, onDelete, variant = 'list' }: NoteCardProps) {
+export function NoteCard({ note, onOpenModal, variant = 'list' }: NoteCardProps) {
   const tags = (note.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
   const date = note.createdAt
     ? new Date(note.createdAt).toLocaleDateString('en-US', {
@@ -39,8 +37,8 @@ export function NoteCard({ note, onOpenModal, onDelete, variant = 'list' }: Note
           {linkify(note.content.replace(/\n/g, ' '))}
         </p>
       )}
-      <div className={`mt-3 flex ${isGrid ? 'flex-col gap-2' : 'items-center justify-between'}`}>
-        <div className="flex flex-wrap gap-1">
+      {tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1">
           {tags.map((tag) => (
             <span
               key={tag}
@@ -50,31 +48,7 @@ export function NoteCard({ note, onOpenModal, onDelete, variant = 'list' }: Note
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpenModal()
-            }}
-            className="hover:text-[var(--accent-cyan)]"
-          >
-            Edit
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-            className="hover:text-[var(--accent-pink)] hover:bg-[rgba(236,72,153,0.1)]"
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

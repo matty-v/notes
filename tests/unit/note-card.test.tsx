@@ -27,7 +27,6 @@ describe('NoteCard', () => {
   let mockNote: ReturnType<typeof createMockNote>
 
   const mockOnOpenModal = vi.fn()
-  const mockOnDelete = vi.fn().mockResolvedValue(undefined)
 
   beforeEach(() => {
     resetIdCounter()
@@ -41,7 +40,7 @@ describe('NoteCard', () => {
 
   it('should render note title and content', () => {
     renderWithQueryClient(
-      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} />
     )
 
     expect(screen.getByText('Test Note')).toBeInTheDocument()
@@ -50,7 +49,7 @@ describe('NoteCard', () => {
 
   it('should render tags', () => {
     renderWithQueryClient(
-      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} />
     )
 
     expect(screen.getByText('test')).toBeInTheDocument()
@@ -60,7 +59,7 @@ describe('NoteCard', () => {
   it('should call onOpenModal when card is clicked', async () => {
     const user = userEvent.setup()
     renderWithQueryClient(
-      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} />
     )
 
     const card = screen.getByText('Test Note').closest('div')
@@ -69,34 +68,9 @@ describe('NoteCard', () => {
     expect(mockOnOpenModal).toHaveBeenCalled()
   })
 
-  it('should call onOpenModal when edit button is clicked', async () => {
-    const user = userEvent.setup()
-    renderWithQueryClient(
-      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
-    )
-
-    const editButton = screen.getByRole('button', { name: /edit/i })
-    await user.click(editButton)
-
-    expect(mockOnOpenModal).toHaveBeenCalled()
-  })
-
-  it('should call onDelete when delete button is clicked', async () => {
-    const user = userEvent.setup()
-    const mockOnDeleteFn = vi.fn().mockResolvedValue(undefined)
-    renderWithQueryClient(
-      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDeleteFn} />
-    )
-
-    const deleteButton = screen.getByRole('button', { name: /delete/i })
-    await user.click(deleteButton)
-
-    expect(mockOnDeleteFn).toHaveBeenCalled()
-  })
-
-  it('should render with grid variant', () => {
+it('should render with grid variant', () => {
     const { container } = renderWithQueryClient(
-      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} variant="grid" />
+      <NoteCard note={mockNote} onOpenModal={mockOnOpenModal} variant="grid" />
     )
 
     const card = container.querySelector('[class*="min-h-"]')
@@ -109,7 +83,7 @@ describe('NoteCard', () => {
         content: 'Check out https://example.com for more info',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithUrl} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithUrl} onOpenModal={mockOnOpenModal} />
       )
 
       const link = screen.getByRole('link', { name: /https:\/\/example\.com/i })
@@ -122,7 +96,7 @@ describe('NoteCard', () => {
         content: 'Visit https://example.com',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithUrl} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithUrl} onOpenModal={mockOnOpenModal} />
       )
 
       const link = screen.getByRole('link')
@@ -135,7 +109,7 @@ describe('NoteCard', () => {
         content: 'Go to www.example.com',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithWww} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithWww} onOpenModal={mockOnOpenModal} />
       )
 
       const link = screen.getByRole('link')
@@ -148,7 +122,7 @@ describe('NoteCard', () => {
         content: 'Check https://one.com and https://two.com',
       })
       renderWithQueryClient(
-        <NoteCard note={noteWithMultipleUrls} onOpenModal={mockOnOpenModal} onDelete={mockOnDelete} />
+        <NoteCard note={noteWithMultipleUrls} onOpenModal={mockOnOpenModal} />
       )
 
       const links = screen.getAllByRole('link')

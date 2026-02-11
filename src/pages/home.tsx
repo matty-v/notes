@@ -170,7 +170,6 @@ export function HomePage() {
                     <NoteCard
                       note={notes[virtualRow.index]}
                       onOpenModal={() => handleOpenModal(notes[virtualRow.index])}
-                      onDelete={() => deleteNote(notes[virtualRow.index].id)}
                     />
                   </div>
                 </div>
@@ -196,7 +195,6 @@ export function HomePage() {
                   note={note}
                   variant="grid"
                   onOpenModal={() => handleOpenModal(note)}
-                  onDelete={() => deleteNote(note.id)}
                 />
               ))}
             </div>
