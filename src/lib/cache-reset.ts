@@ -1,6 +1,7 @@
 import { db } from './db'
 import { getNotesSheet, isApiReachable } from './notes-api'
 import { getPendingCount, processSyncQueue } from './sync'
+import type { Note } from './types'
 
 export interface CacheResetOptions {
   onProgress?: (message: string) => void
@@ -63,8 +64,7 @@ export async function resetCacheForSource(
     // Step 4: Fetch fresh data BEFORE clearing (critical for safety)
     onProgress('Fetching fresh data from source...')
     const notesSheet = getNotesSheet(spreadsheetId)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const remoteNotes = (await notesSheet.getRows()) as any[]
+    const remoteNotes = await notesSheet.getRows<Note>()
 
     // Step 5: Only after successful fetch, clear local cache and write fresh data
     onProgress('Clearing local cache...')

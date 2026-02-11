@@ -1,8 +1,9 @@
 import { marked } from 'marked'
 import { ReactNode } from 'react'
 
-// Regex for detecting URLs (same as linkify)
-const URL_REGEX = /(\bhttps?:\/\/[^\s<>[\]{}|\\^`"']+|\bwww\.[^\s<>[\]{}|\\^`"']+)/gi
+// Regex for detecting plain URLs (not in HTML attributes)
+// Uses negative lookbehind to avoid matching URLs already in href or src attributes
+const URL_REGEX = /(?<!["=])(https?:\/\/[^\s<>[\]{}|\\^`"']+|www\.[^\s<>[\]{}|\\^`"']+)/gi
 
 const renderer = new marked.Renderer()
 
