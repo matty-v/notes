@@ -10,6 +10,8 @@ interface NoteFormProps {
   initialValues?: { title: string; content: string; tags: string[] }
   submitLabel?: string
   onCancel?: () => void
+  formId?: string
+  hideActions?: boolean
 }
 
 export function NoteForm({
@@ -17,6 +19,8 @@ export function NoteForm({
   initialValues,
   submitLabel = 'Save',
   onCancel,
+  formId,
+  hideActions,
 }: NoteFormProps) {
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [content, setContent] = useState(initialValues?.content ?? '')
@@ -79,7 +83,7 @@ export function NoteForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 p-4 rounded-xl bg-[rgba(18,24,33,0.7)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_40px_rgba(0,212,255,0.05),inset_0_1px_0_rgba(255,255,255,0.05)]">
+    <form id={formId} onSubmit={handleSubmit} className="space-y-3">
       <Input
         placeholder="Note title..."
         value={title}
@@ -108,19 +112,19 @@ export function NoteForm({
       {voiceError && (
         <p className="text-sm text-[var(--accent-pink)]">{voiceError}</p>
       )}
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <TagInput key={formKey} value={tags} onChange={setTags} pendingInputRef={pendingTagRef} />
-        </div>
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+      <TagInput key={formKey} value={tags} onChange={setTags} pendingInputRef={pendingTagRef} />
+      {!hideActions && (
+        <div className="flex items-center justify-end gap-2">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={isSubmitting || (!title.trim() && !content.trim())}>
+            {isSubmitting ? 'Saving...' : submitLabel}
           </Button>
-        )}
-        <Button type="submit" disabled={isSubmitting || (!title.trim() && !content.trim())}>
-          {isSubmitting ? 'Saving...' : submitLabel}
-        </Button>
-      </div>
+        </div>
+      )}
     </form>
   )
 }

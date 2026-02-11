@@ -1,4 +1,6 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { X, Plus } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
 
 interface CreateNoteModalProps {
@@ -20,8 +22,26 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit }: CreateNoteModa
           <DialogTitle>Create New Note</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto">
-          <NoteForm onSubmit={handleSubmit} onCancel={() => onOpenChange(false)} submitLabel="Create" />
+          <NoteForm formId="note-create-form" hideActions onSubmit={handleSubmit} submitLabel="Create" />
         </div>
+        <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4 mr-1.5" />
+            Cancel
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => (document.getElementById('note-create-form') as HTMLFormElement)?.requestSubmit()}
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Create
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

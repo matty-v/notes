@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Pencil, Trash2, X, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
@@ -62,16 +63,35 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
             </DialogHeader>
             <div className="flex-1 overflow-y-auto">
               <NoteForm
+                formId="note-edit-form"
+                hideActions
                 initialValues={{
                   title: note.title,
                   content: note.content,
                   tags,
                 }}
                 onSubmit={handleUpdate}
-                onCancel={() => setIsEditing(false)}
                 submitLabel="Update"
               />
             </div>
+            <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+              >
+                <X className="h-4 w-4 mr-1.5" />
+                Cancel
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => (document.getElementById('note-edit-form') as HTMLFormElement)?.requestSubmit()}
+              >
+                <Check className="h-4 w-4 mr-1.5" />
+                Update
+              </Button>
+            </DialogFooter>
           </>
         ) : (
           <>
@@ -103,23 +123,29 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
               </div>
             </div>
 
-            <DialogFooter className="flex items-center justify-between pt-4">
+            <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
               <Button
-                variant="destructive"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={(e) => {
                   e.stopPropagation()
                   handleDelete()
                 }}
                 disabled={isDeleting}
               >
+                <Trash2 className="h-4 w-4 mr-1.5" />
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </Button>
               <Button
+                variant="ghost"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsEditing(true)
                 }}
               >
+                <Pencil className="h-4 w-4 mr-1.5" />
                 Edit
               </Button>
             </DialogFooter>
