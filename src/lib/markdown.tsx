@@ -46,7 +46,7 @@ renderer.list = ({ items, ordered }) => {
 marked.setOptions({
   renderer,
   breaks: true, // Convert \n to <br>
-  gfm: true, // Use GitHub Flavored Markdown
+  gfm: false, // Disable GFM to prevent auto-linking URLs (we handle that with regex)
 })
 
 function escapeHtml(text: string): string {
