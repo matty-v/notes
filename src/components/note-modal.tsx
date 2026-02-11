@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
@@ -103,23 +104,29 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
               </div>
             </div>
 
-            <DialogFooter className="flex items-center justify-between pt-4">
+            <DialogFooter className="flex items-center justify-end gap-2 pt-4">
               <Button
-                variant="destructive"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={(e) => {
                   e.stopPropagation()
                   handleDelete()
                 }}
                 disabled={isDeleting}
               >
+                <Trash2 className="h-4 w-4 mr-1.5" />
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </Button>
               <Button
+                variant="ghost"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsEditing(true)
                 }}
               >
+                <Pencil className="h-4 w-4 mr-1.5" />
                 Edit
               </Button>
             </DialogFooter>

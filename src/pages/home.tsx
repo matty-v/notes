@@ -3,7 +3,6 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
 import { NoteCard } from '@/components/note-card'
 import { NoteModal } from '@/components/note-modal'
 import { CreateNoteModal } from '@/components/create-note-modal'
@@ -83,13 +82,6 @@ export function HomePage() {
           />
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)]"
-          >
-            <Plus className="h-4 w-4" />
-            New Note
-          </Button>
           <SyncStatus
             isOnline={isOnline}
             isSyncing={isSyncing}
@@ -235,6 +227,14 @@ export function HomePage() {
           return Promise.resolve()
         }}
       />
+
+      <button
+        onClick={() => setIsCreateModalOpen(true)}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50"
+        aria-label="New Note"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </div>
   )
 }
