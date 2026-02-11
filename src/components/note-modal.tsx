@@ -104,7 +104,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
               </div>
             </div>
 
-            <DialogFooter className="flex items-center justify-end gap-2 pt-4">
+            <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
               <Button
                 variant="ghost"
                 size="sm"
