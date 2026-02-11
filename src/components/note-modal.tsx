@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
@@ -22,6 +22,14 @@ function renderContentWithNewlines(content: string) {
 export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Reset editing state when modal closes to avoid state persisting across notes
+  useEffect(() => {
+    if (!open) {
+      setIsEditing(false)
+      setIsDeleting(false)
+    }
+  }, [open])
 
   if (!note) return null
 
