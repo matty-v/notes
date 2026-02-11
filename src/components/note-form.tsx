@@ -79,7 +79,7 @@ export function NoteForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 p-4 rounded-xl bg-[rgba(18,24,33,0.7)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_40px_rgba(0,212,255,0.05),inset_0_1px_0_rgba(255,255,255,0.05)]">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <Input
         placeholder="Note title..."
         value={title}
