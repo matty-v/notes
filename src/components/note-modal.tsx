@@ -49,7 +49,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
 
   const handleUpdate = async (data: { title: string; content: string; tags: string }) => {
     await onUpdate(data)
-    onOpenChange(false)
+    setIsEditing(false)
   }
 
   return (

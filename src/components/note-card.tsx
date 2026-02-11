@@ -1,4 +1,4 @@
-import { linkify } from '@/lib/linkify'
+import { renderMarkdown } from '@/lib/markdown'
 import type { Note } from '@/lib/types'
 
 interface NoteCardProps {
@@ -19,7 +19,6 @@ export function NoteCard({ note, onOpenModal, variant = 'list' }: NoteCardProps)
   const isGrid = variant === 'grid'
   const cardPadding = isGrid ? 'p-3' : 'p-4'
   const titleSize = isGrid ? 'text-sm' : 'font-medium'
-  const contentSize = isGrid ? 'text-xs' : 'text-sm'
   const contentClamp = isGrid ? 'line-clamp-2' : 'line-clamp-3'
   const minHeight = isGrid ? 'min-h-[200px]' : ''
 
@@ -33,9 +32,9 @@ export function NoteCard({ note, onOpenModal, variant = 'list' }: NoteCardProps)
         <span className="text-xs text-muted-foreground whitespace-nowrap font-light">{date}</span>
       </div>
       {note.content && (
-        <p className={`mt-2 ${contentSize} text-muted-foreground font-light ${contentClamp}`}>
-          {linkify(note.content.replace(/\n/g, ' '))}
-        </p>
+        <div className={`mt-2 ${contentClamp} overflow-hidden prose prose-invert max-w-none [&]:text-xs [&_p]:mb-1 [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0`}>
+          {renderMarkdown(note.content)}
+        </div>
       )}
       {tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1">

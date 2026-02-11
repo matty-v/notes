@@ -214,7 +214,13 @@ export function HomePage() {
         onOpenChange={handleCloseModal}
         onUpdate={(data) => {
           if (selectedNote) {
-            return updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()
+            return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then(() => {
+              // Refresh the selected note from the updated notes list
+              const updated = notes.find((n) => n.id === selectedNote.id)
+              if (updated) {
+                setSelectedNote(updated)
+              }
+            })
           }
           return Promise.resolve()
         }}
