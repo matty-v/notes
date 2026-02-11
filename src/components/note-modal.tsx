@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
-import { linkify } from '@/lib/linkify'
+import { renderMarkdown } from '@/lib/markdown'
 import type { Note } from '@/lib/types'
 
 interface NoteModalProps {
@@ -13,11 +13,6 @@ interface NoteModalProps {
   onDelete: () => Promise<unknown>
 }
 
-function renderContentWithNewlines(content: string) {
-  return content.split('\n').map((line, index) => (
-    <div key={index}>{linkify(line)}</div>
-  ))
-}
 
 export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
@@ -91,11 +86,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
 
             <div className="flex-1 overflow-y-auto">
               <div className="space-y-4">
-                {note.content && (
-                  <div className="text-base text-muted-foreground font-light leading-relaxed">
-                    {renderContentWithNewlines(note.content)}
-                  </div>
-                )}
+                {note.content && renderMarkdown(note.content)}
 
                 {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-2">

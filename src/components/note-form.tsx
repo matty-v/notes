@@ -87,10 +87,10 @@ export function NoteForm({
       />
       <div className="relative">
         <textarea
-          placeholder="Write your note..."
+          placeholder="Write your note... (supports Markdown)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full min-h-[80px] px-3 py-2 pr-12 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] text-foreground text-sm resize-none focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_20px_rgba(0,212,255,0.1)] placeholder:text-muted-foreground transition-all duration-300"
+          className="w-full min-h-[200px] px-3 py-2 pr-12 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] text-foreground text-sm resize-vertical focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_20px_rgba(0,212,255,0.1)] placeholder:text-muted-foreground transition-all duration-300"
         />
         {isSupported && (
           <Button
