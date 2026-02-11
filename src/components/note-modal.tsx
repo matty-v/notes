@@ -13,6 +13,12 @@ interface NoteModalProps {
   onDelete: () => Promise<unknown>
 }
 
+function renderContentWithNewlines(content: string) {
+  return content.split('\n').map((line, index) => (
+    <div key={index}>{linkify(line)}</div>
+  ))
+}
+
 export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -79,7 +85,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
               <div className="space-y-4">
                 {note.content && (
                   <div className="text-base text-muted-foreground font-light leading-relaxed">
-                    {linkify(note.content)}
+                    {renderContentWithNewlines(note.content)}
                   </div>
                 )}
 

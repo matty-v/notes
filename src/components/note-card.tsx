@@ -36,7 +36,7 @@ export function NoteCard({ note, onOpenModal, onDelete, variant = 'list' }: Note
       </div>
       {note.content && (
         <p className={`mt-2 ${contentSize} text-muted-foreground font-light ${contentClamp}`}>
-          {linkify(note.content)}
+          {linkify(note.content.replace(/\n/g, ' '))}
         </p>
       )}
       <div className={`mt-3 flex ${isGrid ? 'flex-col gap-2' : 'items-center justify-between'}`}>
