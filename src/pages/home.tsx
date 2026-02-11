@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search } from 'lucide-react'
+import { Search, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { NoteForm } from '@/components/note-form'
+import { Button } from '@/components/ui/button'
 import { NoteCard } from '@/components/note-card'
+import { NoteModal } from '@/components/note-modal'
+import { CreateNoteModal } from '@/components/create-note-modal'
 import { TagFilter } from '@/components/tag-filter'
 import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
@@ -15,12 +17,15 @@ import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
 import { useSync } from '@/hooks/use-sync'
 import { useViewMode } from '@/hooks/use-view-mode'
-import type { SortOrder } from '@/lib/types'
+import type { Note, SortOrder } from '@/lib/types'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const { isOnline, isSyncing, pendingCount, sync } = useSync(activeSource)
@@ -55,9 +60,20 @@ export function HomePage() {
     setTagFilter([])  // Reset tag filter when changing source
   }
 
+  const handleOpenModal = (note: Note) => {
+    setSelectedNote(note)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setTimeout(() => setSelectedNote(null), 200) // Clear after animation
+  }
+
   return (
     <div className="h-screen flex flex-col w-full p-4 lg:p-6">
-      <div className="flex items-center justify-between mb-6">
+      {/* Top bar with source selector, sync status, and new note button */}
+      <div className="flex items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <SourceSelector
             sources={sources}
@@ -65,7 +81,14 @@ export function HomePage() {
             onSourceChange={handleSourceChange}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)]"
+          >
+            <Plus className="h-4 w-4" />
+            New Note
+          </Button>
           <SyncStatus
             isOnline={isOnline}
             isSyncing={isSyncing}
@@ -113,10 +136,6 @@ export function HomePage() {
         <TagFilter selected={tagFilter} onChange={setTagFilter} sourceId={activeSource?.id} />
       </div>
 
-      <div className="mb-4">
-        <NoteForm onSubmit={createNote} />
-      </div>
-
       {viewMode === 'list' ? (
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {isLoading ? (
@@ -150,8 +169,7 @@ export function HomePage() {
                   <div className="pb-3">
                     <NoteCard
                       note={notes[virtualRow.index]}
-                      onUpdate={(data) => updateNote({ id: notes[virtualRow.index].id, ...data })}
-                      onDelete={() => deleteNote(notes[virtualRow.index].id)}
+                      onOpenModal={() => handleOpenModal(notes[virtualRow.index])}
                     />
                   </div>
                 </div>
@@ -176,14 +194,37 @@ export function HomePage() {
                   key={note.id}
                   note={note}
                   variant="grid"
-                  onUpdate={(data) => updateNote({ id: note.id, ...data })}
-                  onDelete={() => deleteNote(note.id)}
+                  onOpenModal={() => handleOpenModal(note)}
                 />
               ))}
             </div>
           )}
         </div>
       )}
+
+      <CreateNoteModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSubmit={createNote}
+      />
+
+      <NoteModal
+        note={selectedNote}
+        open={isModalOpen}
+        onOpenChange={handleCloseModal}
+        onUpdate={(data) => {
+          if (selectedNote) {
+            return updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()
+          }
+          return Promise.resolve()
+        }}
+        onDelete={() => {
+          if (selectedNote) {
+            return (deleteNote(selectedNote.id) || Promise.resolve()).then(handleCloseModal)
+          }
+          return Promise.resolve()
+        }}
+      />
     </div>
   )
 }

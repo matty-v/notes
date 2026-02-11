@@ -48,7 +48,7 @@ describe('NoteForm', () => {
     const onSubmit = vi.fn()
     renderWithQueryClient(<NoteForm onSubmit={onSubmit} />)
 
-    const contentTextarea = screen.getByPlaceholderText('Write your note...')
+    const contentTextarea = screen.getByPlaceholderText(/Write your note/)
     await user.type(contentTextarea, 'Note content here')
 
     const saveButton = screen.getByRole('button', { name: /save/i })
@@ -72,7 +72,7 @@ describe('NoteForm', () => {
     const onSubmit = vi.fn()
     renderWithQueryClient(<NoteForm onSubmit={onSubmit} />)
 
-    const contentTextarea = screen.getByPlaceholderText('Write your note...')
+    const contentTextarea = screen.getByPlaceholderText(/Write your note/)
     await user.type(contentTextarea, '   ')
 
     const saveButton = screen.getByRole('button', { name: /save/i })
@@ -85,7 +85,7 @@ describe('NoteForm', () => {
     renderWithQueryClient(<NoteForm onSubmit={onSubmit} />)
 
     const titleInput = screen.getByPlaceholderText('Note title...')
-    const contentTextarea = screen.getByPlaceholderText('Write your note...')
+    const contentTextarea = screen.getByPlaceholderText(/Write your note/)
 
     await user.type(titleInput, 'My Title')
     await user.type(contentTextarea, 'My Content')
@@ -119,7 +119,7 @@ describe('NoteForm', () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     renderWithQueryClient(<NoteForm onSubmit={onSubmit} />)
 
-    const contentTextarea = screen.getByPlaceholderText('Write your note...')
+    const contentTextarea = screen.getByPlaceholderText(/Write your note/)
     await user.type(contentTextarea, 'Just content')
 
     const saveButton = screen.getByRole('button', { name: /save/i })
@@ -152,7 +152,7 @@ describe('NoteForm', () => {
     renderWithQueryClient(<NoteForm onSubmit={onSubmit} initialValues={initialValues} />)
 
     const titleInput = screen.getByPlaceholderText('Note title...') as HTMLInputElement
-    const contentTextarea = screen.getByPlaceholderText('Write your note...') as HTMLTextAreaElement
+    const contentTextarea = screen.getByPlaceholderText(/Write your note/) as HTMLTextAreaElement
 
     expect(titleInput.value).toBe('Existing Title')
     expect(contentTextarea.value).toBe('Existing Content')
