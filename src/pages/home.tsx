@@ -214,9 +214,8 @@ export function HomePage() {
         onOpenChange={handleCloseModal}
         onUpdate={(data) => {
           if (selectedNote) {
-            return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then(() => {
-              // Refresh the selected note from the updated notes list
-              const updated = notes.find((n) => n.id === selectedNote.id)
+            return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then((updated) => {
+              // Update the selected note with the returned data from the mutation
               if (updated) {
                 setSelectedNote(updated)
               }
