@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KanbanColumn } from '@/components/kanban-column'
+import { KanbanNoteCard } from '@/components/kanban-note-card'
 import type { Note, KanbanBoardConfig } from '@/lib/types'
 
 interface KanbanBoardViewProps {
@@ -59,6 +60,8 @@ function organizeNotesIntoColumns(
 }
 
 export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUpdateNote, onAddNote, isLoading = false }: KanbanBoardViewProps) {
+  const [activeId, setActiveId] = useState<string | null>(null)
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -72,8 +75,11 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     [notes, config]
   )
 
+  const draggedNote = activeId ? notes.find(n => n.id === activeId) : null
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+    setActiveId(null)
 
     if (!over || active.id === over.id) return
 
@@ -217,14 +223,14 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
               tag={column.tag || ''}
               notes={column.notes}
               onNoteClick={onNoteClick}
-              onAddNote={column.isDefault ? () => {} : onAddNote}
+              onAddNote={column.isDefault ? () => {} : () => onAddNote(column.tag || '')}
               isDefaultColumn={column.isDefault}
             />
           ))}
         </div>
       </div>
       <DragOverlay>
-        {activeId && draggedNote ? <KanbanNoteCard note={draggedNote} isDragging isOverlay onDragHandlePointerDown={() => {}} /> : null}
+        {activeId && draggedNote ? <KanbanNoteCard note={draggedNote} onOpenModal={() => {}} /> : null}
       </DragOverlay>
     </DndContext>
   )

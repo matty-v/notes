@@ -14,7 +14,7 @@ interface KanbanColumnProps {
   isDefaultColumn?: boolean
 }
 
-export function KanbanColumn({ id, title, tag, notes, onNoteClick, onAddNote, isDefaultColumn = false }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNote, isDefaultColumn = false }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: id,
   })
