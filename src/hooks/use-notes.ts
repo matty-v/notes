@@ -15,6 +15,7 @@ interface CreateNoteInput {
   title: string
   content: string
   tags: string
+  skipAutoGeneration?: boolean
 }
 
 interface UseNotesOptions {
@@ -78,8 +79,8 @@ export function useNotes(options: UseNotesOptions = {}) {
       let title = input.title
       let tags = input.tags
 
-      // Auto-generate title and/or tags if they're empty
-      if (shouldGenerateTitle(title) || shouldGenerateTags(tags)) {
+      // Auto-generate title and/or tags if they're empty (unless skipAutoGeneration is true)
+      if (!input.skipAutoGeneration && (shouldGenerateTitle(title) || shouldGenerateTags(tags))) {
         const generated = await generateMetadata(input.content)
         if (generated) {
           if (shouldGenerateTitle(title)) {

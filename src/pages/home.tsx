@@ -289,6 +289,7 @@ export function HomePage() {
         }}
         onSubmit={createNote}
         initialTags={createNoteTags}
+        sourceId={activeSource?.id}
       />
 
       <NoteModal
