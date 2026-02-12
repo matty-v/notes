@@ -27,6 +27,7 @@ export function HomePage() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [createNoteTags, setCreateNoteTags] = useState<string[]>([])
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -152,10 +153,11 @@ export function HomePage() {
           <button
             onClick={handleRefresh}
             disabled={!activeSource || isRefreshing}
-            className="p-2 rounded-lg hover:bg-[rgba(100,150,255,0.1)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh notes from Google Sheets"
+            className="inline-flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 border bg-[rgba(0,212,255,0.1)] text-[var(--accent-cyan)] border-[rgba(0,212,255,0.2)] hover:border-[var(--accent-cyan)] hover:shadow-[0_0_20px_rgba(0,212,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Refresh cache"
           >
-            <RefreshCw className={`h-4 w-4 text-[var(--accent-cyan)] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
           <SettingsDialog
             sources={sources}
@@ -271,14 +273,22 @@ export function HomePage() {
               updateNote({ id: noteId, tags })
             }
           }}
+          onAddNote={(tag) => {
+            setCreateNoteTags([tag])
+            setIsCreateModalOpen(true)
+          }}
           isLoading={isLoading}
         />
       )}
 
       <CreateNoteModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateModalOpen(open)
+          if (!open) setCreateNoteTags([])
+        }}
         onSubmit={createNote}
+        initialTags={createNoteTags}
       />
 
       <NoteModal
@@ -305,7 +315,7 @@ export function HomePage() {
       />
 
       <button
-        onClick={() => setIsCreateModalOpen(true)}
+        onClick={() => { setCreateNoteTags([]); setIsCreateModalOpen(true) }}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50"
         aria-label="New Note"
       >

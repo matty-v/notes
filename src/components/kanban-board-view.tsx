@@ -11,6 +11,7 @@ interface KanbanBoardViewProps {
   onNoteClick: (note: Note) => void
   onOpenConfig: () => void
   onUpdateNote: (noteId: string, tags: string) => void
+  onAddNote: (tag: string) => void
   isLoading?: boolean
 }
 
@@ -57,7 +58,7 @@ function organizeNotesIntoColumns(
   return columnMap
 }
 
-export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUpdateNote, isLoading = false }: KanbanBoardViewProps) {
+export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUpdateNote, onAddNote, isLoading = false }: KanbanBoardViewProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -179,7 +180,7 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
   }
 
   // Build ordered list of columns to render
-  const columnsToRender: Array<{ id: string; title: string; notes: Note[]; isDefault: boolean }> = []
+  const columnsToRender: Array<{ id: string; title: string; tag?: string; notes: Note[]; isDefault: boolean }> = []
 
   // Add configured columns in order
   const sortedColumns = [...config.columns].sort((a, b) => a.order - b.order)
@@ -187,6 +188,7 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     columnsToRender.push({
       id: column.id,
       title: column.name,
+      tag: column.tag,
       notes: organizedNotes.get(column.id) || [],
       isDefault: false,
     })
@@ -197,6 +199,7 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     columnsToRender.push({
       id: '__default__',
       title: config.defaultColumn.name,
+      tag: '',
       notes: organizedNotes.get('__default__') || [],
       isDefault: true,
     })
@@ -211,15 +214,17 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
               key={column.id}
               id={column.id}
               title={column.title}
+              tag={column.tag || ''}
               notes={column.notes}
               onNoteClick={onNoteClick}
+              onAddNote={column.isDefault ? () => {} : onAddNote}
               isDefaultColumn={column.isDefault}
             />
           ))}
         </div>
       </div>
       <DragOverlay>
-        {null}
+        {activeId && draggedNote ? <KanbanNoteCard note={draggedNote} isDragging isOverlay onDragHandlePointerDown={() => {}} /> : null}
       </DragOverlay>
     </DndContext>
   )
