@@ -5,7 +5,7 @@ import type { ViewMode } from '@/lib/types'
 export function useViewMode() {
   const [viewMode, setViewModeState] = useState<ViewMode>(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEYS.VIEW_MODE)
-    if (stored === 'list' || stored === 'grid') {
+    if (stored === 'list' || stored === 'grid' || stored === 'kanban') {
       return stored
     }
     return 'list'

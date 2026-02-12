@@ -6,6 +6,7 @@ export const LOCAL_STORAGE_KEYS = {
   SOURCES: 'notesSources',
   ACTIVE_SOURCE_ID: 'notesActiveSourceId',
   VIEW_MODE: 'notesViewMode',
+  KANBAN_CONFIG: 'notesKanbanConfig',
 }
 
 export const SERVICE_ACCOUNT_EMAIL = 'sheets-db-api@kinetic-object-322814.iam.gserviceaccount.com'
