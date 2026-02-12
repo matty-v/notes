@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Plus } from 'lucide-react'
+import { Search, Plus, RotateCcw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { NoteCard } from '@/components/note-card'
 import { NoteModal } from '@/components/note-modal'
@@ -27,6 +27,7 @@ export function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
+  const [isResettingCache, setIsResettingCache] = useState(false)
 
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const { isOnline, isSyncing, pendingCount, sync } = useSync(activeSource)
@@ -63,6 +64,16 @@ export function HomePage() {
     setTagFilter([])  // Reset tag filter when changing source
   }
 
+  const handleCacheRefresh = async () => {
+    if (!activeSource || isResettingCache) return
+    setIsResettingCache(true)
+    try {
+      await resetCache(activeSource.id, activeSource.spreadsheetId)
+    } finally {
+      setIsResettingCache(false)
+    }
+  }
+
   const handleOpenModal = (note: Note) => {
     setSelectedNote(note)
     setIsModalOpen(true)
@@ -91,6 +102,15 @@ export function HomePage() {
             pendingCount={pendingCount}
             onSync={sync}
           />
+          <button
+            onClick={handleCacheRefresh}
+            disabled={!activeSource || !isOnline || isResettingCache}
+            title="Refresh cache"
+            className="inline-flex items-center justify-center h-8 w-8 rounded-lg transition-all duration-300 border bg-[rgba(236,72,153,0.1)] text-[var(--accent-pink)] border-[rgba(236,72,153,0.2)] hover:border-[var(--accent-pink)] hover:shadow-[0_0_20px_rgba(236,72,153,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Refresh cache"
+          >
+            <RotateCcw className={`h-4 w-4 ${isResettingCache ? 'animate-spin' : ''}`} />
+          </button>
           <SettingsDialog
             sources={sources}
             onAddSource={addSource}
