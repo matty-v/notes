@@ -7,13 +7,14 @@ import type { Note } from '@/lib/types'
 interface KanbanColumnProps {
   id: string
   title: string
+  tag: string
   notes: Note[]
   onNoteClick: (note: Note) => void
   onAddNote?: () => void
   isDefaultColumn?: boolean
 }
 
-export function KanbanColumn({ id, title, notes, onNoteClick, onAddNote, isDefaultColumn = false }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNote, isDefaultColumn = false }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: id,
   })

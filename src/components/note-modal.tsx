@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Pencil, Trash2, X, Check } from 'lucide-react'
+import { Pencil, Trash2, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
@@ -75,14 +75,6 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
               />
             </div>
             <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditing(false)}
-              >
-                <X className="h-4 w-4 mr-1.5" />
-                Cancel
-              </Button>
               <Button
                 variant="ghost"
                 size="sm"

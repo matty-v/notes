@@ -1,6 +1,5 @@
 import { db } from './db'
 import { getNotesSheet, isApiReachable } from './notes-api'
-import { getPendingCount, processSyncQueue } from './sync'
 import type { Note } from './types'
 
 export interface CacheResetOptions {
@@ -15,12 +14,10 @@ export interface CacheResetResult {
 /**
  * Reset the local cache for a specific source.
  *
- * Safety-first approach:
+ * Approach:
  * 1. Check API reachability - abort if offline
- * 2. Check for pending sync operations
- * 3. If pending changes exist, sync them first (preserves work)
- * 4. Fetch fresh data from remote BEFORE clearing (prevents data loss if fetch fails)
- * 5. Only after successful fetch: clear local cache and write fresh data
+ * 2. Fetch fresh data from remote BEFORE clearing (prevents data loss if fetch fails)
+ * 3. Only after successful fetch: clear local cache and write fresh data
  *
  * @param sourceId - The source ID to reset cache for
  * @param spreadsheetId - The spreadsheet ID for the source
@@ -45,31 +42,14 @@ export async function resetCacheForSource(
       }
     }
 
-    // Step 2: Check for pending sync operations
-    onProgress('Checking for pending changes...')
-    const pendingCount = await getPendingCount(sourceId)
-
-    // Step 3: Sync pending changes first (if any)
-    if (pendingCount > 0) {
-      onProgress('Syncing pending changes...')
-      const syncResult = await processSyncQueue(sourceId, spreadsheetId)
-      if (syncResult.failed > 0) {
-        return {
-          success: false,
-          error: `Failed to sync ${syncResult.failed} pending changes. Please try again.`,
-        }
-      }
-    }
-
-    // Step 4: Fetch fresh data BEFORE clearing (critical for safety)
+    // Step 2: Fetch fresh data BEFORE clearing (critical for safety)
     onProgress('Fetching fresh data from source...')
     const notesSheet = getNotesSheet(spreadsheetId)
     const remoteNotes = await notesSheet.getRows<Note>()
 
-    // Step 5: Only after successful fetch, clear local cache and write fresh data
+    // Step 3: Only after successful fetch, clear local cache and write fresh data
     onProgress('Clearing local cache...')
     await db.notes.where('sourceId').equals(sourceId).delete()
-    await db.pendingSync.where('sourceId').equals(sourceId).delete()
 
     onProgress('Writing fresh data...')
     for (const remoteNote of remoteNotes) {

@@ -17,7 +17,6 @@ const createWrapper = () => {
 describe('useTags', () => {
   beforeEach(async () => {
     await db.notes.clear()
-    await db.pendingSync.clear()
   })
 
   it('should not include tags from soft-deleted notes', async () => {

@@ -25,8 +25,6 @@ interface SettingsDialogProps {
   onSaveApiKey: (key: string) => void
   onClearApiKey: () => void
   activeSource: NoteSource | null
-  pendingCount: number
-  isOnline: boolean
   onResetCache: (sourceId: string, spreadsheetId: string) => Promise<boolean>
 }
 
@@ -41,8 +39,6 @@ export function SettingsDialog({
   onSaveApiKey,
   onClearApiKey,
   activeSource,
-  pendingCount,
-  isOnline,
   onResetCache,
 }: SettingsDialogProps) {
   const [open, setOpen] = useState(false)
@@ -102,8 +98,6 @@ export function SettingsDialog({
             <h3 className="text-sm font-semibold mb-3 text-[var(--accent-pink)]">Cache Management</h3>
             <CacheResetPanel
               activeSource={activeSource}
-              pendingCount={pendingCount}
-              isOnline={isOnline}
               onReset={handleResetCache}
             />
           </div>

@@ -14,6 +14,18 @@ vi.mock('@/services/claude/generateMetadata', async () => {
   }
 })
 
+// Mock the notes-api module
+/* eslint-disable @typescript-eslint/no-explicit-any */
+vi.mock('@/lib/notes-api', () => ({
+  getNotesSheet: vi.fn(() => ({
+    createRow: vi.fn(async (data: any) => ({ rowIndex: 2, data })),
+    updateRow: vi.fn(async (_rowIndex: number, data: any) => data),
+    getRows: vi.fn(async () => []),
+    deleteRow: vi.fn(),
+  })),
+}))
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -30,7 +42,6 @@ function createWrapper() {
 describe('useNotes - Auto-generation', () => {
   beforeEach(async () => {
     await db.notes.clear()
-    await db.pendingSync.clear()
     vi.clearAllMocks()
   })
 
@@ -42,7 +53,7 @@ describe('useNotes - Auto-generation', () => {
         tags: ['tag1', 'tag2'],
       })
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -68,7 +79,7 @@ describe('useNotes - Auto-generation', () => {
         tags: ['generated1', 'generated2', 'generated3'],
       })
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -94,7 +105,7 @@ describe('useNotes - Auto-generation', () => {
         tags: ['tag1', 'tag2'],
       })
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -116,7 +127,7 @@ describe('useNotes - Auto-generation', () => {
     it('should not auto-generate when title and tags are provided', async () => {
       const mockGenerate = vi.mocked(generateMetadataModule.generateMetadata)
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -139,7 +150,7 @@ describe('useNotes - Auto-generation', () => {
       const mockGenerate = vi.mocked(generateMetadataModule.generateMetadata)
       mockGenerate.mockResolvedValueOnce(null)
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -166,7 +177,7 @@ describe('useNotes - Auto-generation', () => {
         tags: ['tag1'],
       })
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -198,13 +209,23 @@ describe('useNotes - Auto-generation', () => {
         updatedAt: '2026-01-11T00:00:00.000Z',
       })
 
+      // Mock getNotesSheet to return the note for update
+      const { getNotesSheet } = await import('@/lib/notes-api')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(getNotesSheet).mockReturnValue({
+        createRow: vi.fn(async (data: any) => ({ rowIndex: 2, data })),
+        updateRow: vi.fn(async (_rowIndex: number, data: any) => data),
+        getRows: vi.fn(async () => [{ id: 'test-1', title: 'Original Title' }]) as any,
+        deleteRow: vi.fn(),
+      })
+
       const mockGenerate = vi.mocked(generateMetadataModule.generateMetadata)
       mockGenerate.mockResolvedValueOnce({
         title: 'Generated Title',
         tags: ['generated1'],
       })
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -234,13 +255,22 @@ describe('useNotes - Auto-generation', () => {
         updatedAt: '2026-01-11T00:00:00.000Z',
       })
 
+      // Mock getNotesSheet to return the note for update
+      const { getNotesSheet } = await import('@/lib/notes-api')
+      vi.mocked(getNotesSheet).mockReturnValue({
+        createRow: vi.fn(async (data) => ({ rowIndex: 2, data })),
+        updateRow: vi.fn(async (_rowIndex, data) => data),
+        getRows: vi.fn(async () => [{ id: 'test-1', title: 'Title' }]) as any,
+        deleteRow: vi.fn(),
+      })
+
       const mockGenerate = vi.mocked(generateMetadataModule.generateMetadata)
       mockGenerate.mockResolvedValueOnce({
         title: 'Generated Title',
         tags: ['generated1', 'generated2'],
       })
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -269,9 +299,18 @@ describe('useNotes - Auto-generation', () => {
         updatedAt: '2026-01-11T00:00:00.000Z',
       })
 
+      // Mock getNotesSheet to return the note for update
+      const { getNotesSheet } = await import('@/lib/notes-api')
+      vi.mocked(getNotesSheet).mockReturnValue({
+        createRow: vi.fn(async (data) => ({ rowIndex: 2, data })),
+        updateRow: vi.fn(async (_rowIndex, data) => data),
+        getRows: vi.fn(async () => [{ id: 'test-1', title: 'Title' }]) as any,
+        deleteRow: vi.fn(),
+      })
+
       const mockGenerate = vi.mocked(generateMetadataModule.generateMetadata)
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
@@ -302,10 +341,19 @@ describe('useNotes - Auto-generation', () => {
         updatedAt: '2026-01-11T00:00:00.000Z',
       })
 
+      // Mock getNotesSheet to return the note for update
+      const { getNotesSheet } = await import('@/lib/notes-api')
+      vi.mocked(getNotesSheet).mockReturnValue({
+        createRow: vi.fn(async (data) => ({ rowIndex: 2, data })),
+        updateRow: vi.fn(async (_rowIndex, data) => data),
+        getRows: vi.fn(async () => [{ id: 'test-1', title: 'Title' }]) as any,
+        deleteRow: vi.fn(),
+      })
+
       const mockGenerate = vi.mocked(generateMetadataModule.generateMetadata)
       mockGenerate.mockResolvedValueOnce(null)
 
-      const { result } = renderHook(() => useNotes(), {
+      const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
         wrapper: createWrapper(),
       })
 
