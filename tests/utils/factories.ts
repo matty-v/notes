@@ -1,4 +1,4 @@
-import type { Note, PendingSync } from '@/lib/types'
+import type { Note } from '@/lib/types'
 
 let noteIdCounter = 1
 
@@ -21,26 +21,6 @@ export function createMockNote(overrides?: Partial<Note>): Note {
     tags: '',
     createdAt: now,
     updatedAt: now,
-    ...overrides,
-  }
-}
-
-/**
- * Creates a mock PendingSync object with sensible defaults.
- *
- * @param overrides - Partial PendingSync object to override defaults
- * @returns A complete PendingSync object
- */
-export function createMockPendingSync(overrides?: Partial<PendingSync>): PendingSync {
-  const id = String(noteIdCounter++)
-  const now = new Date().toISOString()
-
-  return {
-    id,
-    sourceId: 'test-source',
-    noteId: '1',
-    operation: 'create',
-    timestamp: now,
     ...overrides,
   }
 }

@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Plus } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Search, Plus, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { NoteCard } from '@/components/note-card'
 import { NoteModal } from '@/components/note-modal'
 import { CreateNoteModal } from '@/components/create-note-modal'
 import { TagFilter } from '@/components/tag-filter'
-import { SyncStatus } from '@/components/sync-status'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { SourceSelector } from '@/components/source-selector'
 import { ViewModeToggle } from '@/components/view-mode-toggle'
@@ -15,9 +15,10 @@ import { KanbanConfigDialog } from '@/components/kanban-config-dialog'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
-import { useSync } from '@/hooks/use-sync'
 import { useViewMode } from '@/hooks/use-view-mode'
 import { useKanbanConfig } from '@/hooks/use-kanban-config'
+import { toast } from '@/hooks/use-toast'
+import { refreshCacheFromRemote } from '@/lib/cache'
 import type { Note } from '@/lib/types'
 
 export function HomePage() {
@@ -27,9 +28,10 @@ export function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
+  const queryClient = useQueryClient()
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
-  const { isOnline, isSyncing, pendingCount, sync } = useSync(activeSource)
   const {
     initializeSheets,
     isInitializing,
@@ -46,7 +48,45 @@ export function HomePage() {
     tagFilter,
     sortOrder: 'newest',
     sourceId: activeSource?.id,
+    spreadsheetId: activeSource?.spreadsheetId,
   })
+
+  // Show migration warning if present
+  useEffect(() => {
+    const hasWarning = localStorage.getItem('migration-warning-v3')
+    if (hasWarning) {
+      toast({
+        variant: 'destructive',
+        title: 'App Updated',
+        description: 'Offline mode removed. Any unsynced changes may be lost. Refresh cache in settings.',
+      })
+      localStorage.removeItem('migration-warning-v3')
+    }
+  }, [])
+
+  // Always perform hard refresh on load and when source changes
+  useEffect(() => {
+    if (activeSource?.id && activeSource?.spreadsheetId) {
+      // Immediately clear the cache for this source before fetching
+      const clearAndRefresh = async () => {
+        try {
+          // Hard refresh: clear cache and fetch fresh data
+          await refreshCacheFromRemote(activeSource.id, activeSource.spreadsheetId)
+          await queryClient.invalidateQueries({ queryKey: ['notes'] })
+          await queryClient.invalidateQueries({ queryKey: ['tags'] })
+        } catch (err) {
+          console.error('Cache refresh failed:', err)
+          toast({
+            variant: 'destructive',
+            title: 'Failed to load notes',
+            description: 'Could not fetch notes from Google Sheets. Check your connection.',
+          })
+        }
+      }
+
+      clearAndRefresh()
+    }
+  }, [activeSource?.id, activeSource?.spreadsheetId, queryClient])
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -73,6 +113,30 @@ export function HomePage() {
     setTimeout(() => setSelectedNote(null), 200) // Clear after animation
   }
 
+  const handleRefresh = async () => {
+    if (!activeSource?.id || !activeSource?.spreadsheetId || isRefreshing) return
+
+    setIsRefreshing(true)
+    try {
+      await refreshCacheFromRemote(activeSource.id, activeSource.spreadsheetId)
+      await queryClient.invalidateQueries({ queryKey: ['notes'] })
+      await queryClient.invalidateQueries({ queryKey: ['tags'] })
+      toast({
+        title: 'Cache refreshed',
+        description: 'Notes refreshed from Google Sheets',
+      })
+    } catch (err) {
+      console.error('Cache refresh failed:', err)
+      toast({
+        variant: 'destructive',
+        title: 'Refresh failed',
+        description: err instanceof Error ? err.message : 'Failed to refresh cache',
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   return (
     <div className="h-screen flex flex-col w-full p-4 lg:p-6">
       {/* Top bar with source selector, sync status, and new note button */}
@@ -85,12 +149,14 @@ export function HomePage() {
           />
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <SyncStatus
-            isOnline={isOnline}
-            isSyncing={isSyncing}
-            pendingCount={pendingCount}
-            onSync={sync}
-          />
+          <button
+            onClick={handleRefresh}
+            disabled={!activeSource || isRefreshing}
+            className="p-2 rounded-lg hover:bg-[rgba(100,150,255,0.1)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh notes from Google Sheets"
+          >
+            <RefreshCw className={`h-4 w-4 text-[var(--accent-cyan)] ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
           <SettingsDialog
             sources={sources}
             onAddSource={addSource}
@@ -102,8 +168,6 @@ export function HomePage() {
             onSaveApiKey={setAnthropicApiKey}
             onClearApiKey={clearAnthropicApiKey}
             activeSource={activeSource}
-            pendingCount={pendingCount}
-            isOnline={isOnline}
             onResetCache={resetCache}
           />
         </div>

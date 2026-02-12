@@ -77,7 +77,6 @@ export function useSettings() {
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['notes'] })
         queryClient.invalidateQueries({ queryKey: ['tags'] })
-        queryClient.invalidateQueries({ queryKey: ['pendingSync'] })
         setStatus('')
         return true
       } else {

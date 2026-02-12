@@ -6,12 +6,9 @@ import { HomePage } from '@/pages/home'
 import { db } from '@/lib/db'
 import type { Note } from '@/lib/types'
 
-// Mock the sync module to prevent remote calls
-vi.mock('@/lib/sync', () => ({
-  queueSync: vi.fn(),
-  pullFromRemote: vi.fn().mockResolvedValue(undefined),
-  processSyncQueue: vi.fn().mockResolvedValue({ success: 0, failed: 0 }),
-  getPendingCount: vi.fn().mockResolvedValue(0),
+// Mock the cache module to prevent remote calls
+vi.mock('@/lib/cache', () => ({
+  refreshCacheFromRemote: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Mock notes-api to prevent real HTTP calls
@@ -97,7 +94,6 @@ function createMockNote(index: number): Note {
 describe('HomePage Virtualization', () => {
   beforeEach(async () => {
     await db.notes.clear()
-    await db.pendingSync.clear()
   })
 
   it('should render the Notes heading', async () => {

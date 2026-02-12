@@ -9,15 +9,6 @@ export interface Note {
   deletedAt?: string
 }
 
-export interface PendingSync {
-  id: string
-  sourceId: string
-  noteId: string
-  operation: 'create' | 'update' | 'delete'
-  data?: Note
-  timestamp: string
-}
-
 export interface NoteSource {
   id: string
   name: string

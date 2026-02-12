@@ -21,15 +21,9 @@ vi.mock('@/lib/notes-api', () => ({
   isApiReachable: vi.fn(),
 }))
 
-vi.mock('@/lib/sync', () => ({
-  getPendingCount: vi.fn(),
-  processSyncQueue: vi.fn(),
-}))
-
 describe('Cache Reset', () => {
   beforeEach(async () => {
     await db.notes.clear()
-    await db.pendingSync.clear()
     vi.clearAllMocks()
   })
 
@@ -50,10 +44,8 @@ describe('Cache Reset', () => {
 
     // Setup mocks
     const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount } = await import('@/lib/sync')
 
     vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(0)
 
     const mockRemoteNote: Note = {
       ...mockNote,
@@ -65,7 +57,6 @@ describe('Cache Reset', () => {
     const mockSheetFn = vi.fn()
     mockSheetFn.mockResolvedValueOnce([mockRemoteNote])
 
-     
     vi.mocked(getNotesSheet).mockReturnValueOnce({
       getRows: mockSheetFn,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,56 +69,6 @@ describe('Cache Reset', () => {
     const notes = await db.notes.toArray()
     expect(notes).toHaveLength(1)
     expect(notes[0].id).toBe('note-2')
-  })
-
-  it('should sync pending changes before reset', async () => {
-    // Setup: Add a pending sync operation
-    await db.pendingSync.add({
-      id: 'pending-1',
-      noteId: 'note-1',
-      sourceId: TEST_SOURCE_ID,
-      operation: 'create',
-      timestamp: new Date().toISOString(),
-    })
-
-    // Setup mocks
-    const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount, processSyncQueue } = await import('@/lib/sync')
-
-    vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(1)
-    vi.mocked(processSyncQueue).mockResolvedValueOnce({ success: 1, failed: 0 })
-
-    const mockSheetFn = vi.fn()
-    mockSheetFn.mockResolvedValueOnce([mockNote])
-
-     
-    vi.mocked(getNotesSheet).mockReturnValueOnce({
-      getRows: mockSheetFn,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any)
-
-    await resetCacheForSource(TEST_SOURCE_ID, TEST_SPREADSHEET_ID)
-
-    // Verify processSyncQueue was called
-    expect(processSyncQueue).toHaveBeenCalledWith(TEST_SOURCE_ID, TEST_SPREADSHEET_ID)
-  })
-
-  it('should abort if sync fails before reset', async () => {
-    // Setup mocks
-    const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount, processSyncQueue } = await import('@/lib/sync')
-
-    vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(1)
-    vi.mocked(processSyncQueue).mockResolvedValueOnce({ success: 0, failed: 1 })
-
-    const result = await resetCacheForSource(TEST_SOURCE_ID, TEST_SPREADSHEET_ID)
-
-    expect(result.success).toBe(false)
-    expect(result.error).toContain('Failed to sync')
-    // Notes sheet should not be called if sync fails
-    expect(getNotesSheet).not.toHaveBeenCalled()
   })
 
   it('should only clear notes for the specified source', async () => {
@@ -143,15 +84,12 @@ describe('Cache Reset', () => {
 
     // Setup mocks
     const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount } = await import('@/lib/sync')
 
     vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(0)
 
     const mockSheetFn = vi.fn()
     mockSheetFn.mockResolvedValueOnce([])
 
-     
     vi.mocked(getNotesSheet).mockReturnValueOnce({
       getRows: mockSheetFn,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,15 +117,12 @@ describe('Cache Reset', () => {
 
     // Setup mocks
     const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount } = await import('@/lib/sync')
 
     vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(0)
 
     const mockSheetFn = vi.fn()
     mockSheetFn.mockResolvedValueOnce([deletedNote, activeNote])
 
-     
     vi.mocked(getNotesSheet).mockReturnValueOnce({
       getRows: mockSheetFn,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -206,15 +141,12 @@ describe('Cache Reset', () => {
     const onProgress = vi.fn((msg: string) => progressMessages.push(msg))
 
     const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount } = await import('@/lib/sync')
 
     vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(0)
 
     const mockSheetFn = vi.fn()
     mockSheetFn.mockResolvedValueOnce([mockNote])
 
-     
     vi.mocked(getNotesSheet).mockReturnValueOnce({
       getRows: mockSheetFn,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -231,15 +163,12 @@ describe('Cache Reset', () => {
 
   it('should handle fetch errors gracefully', async () => {
     const { isApiReachable, getNotesSheet } = await import('@/lib/notes-api')
-    const { getPendingCount } = await import('@/lib/sync')
 
     vi.mocked(isApiReachable).mockResolvedValueOnce(true)
-    vi.mocked(getPendingCount).mockResolvedValueOnce(0)
 
     const mockSheetFn = vi.fn()
     mockSheetFn.mockRejectedValueOnce(new Error('Network error'))
 
-     
     vi.mocked(getNotesSheet).mockReturnValueOnce({
       getRows: mockSheetFn,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
