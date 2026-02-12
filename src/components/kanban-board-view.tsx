@@ -80,8 +80,33 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     const note = notes.find((n) => n.id === active.id)
     if (!note) return
 
-    // Find the target column
-    const targetColumnId = over.id as string
+    // Determine the target column ID
+    let targetColumnId: string | undefined
+
+    // Check if over.id is a column ID (either a configured column or the default column)
+    const isColumnId =
+      over.id === '__default__' ||
+      config.columns.some(col => col.id === over.id)
+
+    if (isColumnId) {
+      targetColumnId = over.id as string
+    } else {
+      // over.id is likely a note ID - find which column contains it
+      // First check if dnd-kit provides the container ID
+      targetColumnId = over.data.current?.sortable?.containerId as string | undefined
+
+      // Fallback: search through organized notes to find the column
+      if (!targetColumnId) {
+        for (const [columnId, columnNotes] of organizedNotes.entries()) {
+          if (columnNotes.some(n => n.id === over.id)) {
+            targetColumnId = columnId
+            break
+          }
+        }
+      }
+    }
+
+    if (!targetColumnId) return
 
     // Get current note tags
     const currentTags = (note.tags || '').split(',').map(t => t.trim()).filter(Boolean)

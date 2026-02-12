@@ -60,66 +60,101 @@ export function useKanbanConfig(sourceId: string) {
 
   const addColumn = useCallback(
     (tag: string, name?: string) => {
-      const currentConfig = configStore[sourceId] ?? getDefaultConfig(sourceId)
       const newColumn: BoardColumn = {
         id: generateColumnId(),
         tag,
         name: name ?? tag,
-        order: currentConfig.columns.length,
+        order: 0, // Will be updated below
       }
-      updateConfig({
-        columns: [...currentConfig.columns, newColumn],
+
+      setConfigStore((prev) => {
+        const currentConfig = prev[sourceId] ?? getDefaultConfig(sourceId)
+        newColumn.order = currentConfig.columns.length
+        const updated = {
+          ...prev,
+          [sourceId]: {
+            ...currentConfig,
+            columns: [...currentConfig.columns, newColumn],
+          },
+        }
+        saveConfigStore(updated)
+        return updated
       })
+
       return newColumn
     },
-    [configStore, sourceId, updateConfig]
+    [sourceId]
   )
 
   const removeColumn = useCallback(
     (columnId: string) => {
-      const currentConfig = configStore[sourceId] ?? getDefaultConfig(sourceId)
-      const updatedColumns = currentConfig.columns
-        .filter((col) => col.id !== columnId)
-        .map((col, index) => ({ ...col, order: index }))
-      updateConfig({
-        columns: updatedColumns,
+      setConfigStore((prev) => {
+        const currentConfig = prev[sourceId] ?? getDefaultConfig(sourceId)
+        const updatedColumns = currentConfig.columns
+          .filter((col) => col.id !== columnId)
+          .map((col, index) => ({ ...col, order: index }))
+        const updated = {
+          ...prev,
+          [sourceId]: {
+            ...currentConfig,
+            columns: updatedColumns,
+          },
+        }
+        saveConfigStore(updated)
+        return updated
       })
     },
-    [configStore, sourceId, updateConfig]
+    [sourceId]
   )
 
   const reorderColumn = useCallback(
     (columnId: string, direction: 'up' | 'down') => {
-      const currentConfig = configStore[sourceId] ?? getDefaultConfig(sourceId)
-      const columns = [...currentConfig.columns]
-      const index = columns.findIndex((col) => col.id === columnId)
+      setConfigStore((prev) => {
+        const currentConfig = prev[sourceId] ?? getDefaultConfig(sourceId)
+        const columns = [...currentConfig.columns]
+        const index = columns.findIndex((col) => col.id === columnId)
 
-      if (index === -1) return
-      if (direction === 'up' && index === 0) return
-      if (direction === 'down' && index === columns.length - 1) return
+        if (index === -1) return prev
+        if (direction === 'up' && index === 0) return prev
+        if (direction === 'down' && index === columns.length - 1) return prev
 
-      const targetIndex = direction === 'up' ? index - 1 : index + 1
-      ;[columns[index], columns[targetIndex]] = [columns[targetIndex], columns[index]]
+        const targetIndex = direction === 'up' ? index - 1 : index + 1
+        ;[columns[index], columns[targetIndex]] = [columns[targetIndex], columns[index]]
 
-      const reorderedColumns = columns.map((col, idx) => ({ ...col, order: idx }))
-      updateConfig({
-        columns: reorderedColumns,
+        const reorderedColumns = columns.map((col, idx) => ({ ...col, order: idx }))
+        const updated = {
+          ...prev,
+          [sourceId]: {
+            ...currentConfig,
+            columns: reorderedColumns,
+          },
+        }
+        saveConfigStore(updated)
+        return updated
       })
     },
-    [configStore, sourceId, updateConfig]
+    [sourceId]
   )
 
   const updateDefaultColumn = useCallback(
     (updates: Partial<KanbanBoardConfig['defaultColumn']>) => {
-      const currentConfig = configStore[sourceId] ?? getDefaultConfig(sourceId)
-      updateConfig({
-        defaultColumn: {
-          ...currentConfig.defaultColumn,
-          ...updates,
-        },
+      setConfigStore((prev) => {
+        const currentConfig = prev[sourceId] ?? getDefaultConfig(sourceId)
+        const updated = {
+          ...prev,
+          [sourceId]: {
+            ...currentConfig,
+            defaultColumn: {
+              ...currentConfig.defaultColumn,
+              ...updates,
+            },
+          },
+        }
+        saveConfigStore(updated)
+        return updated
       })
     },
-    [configStore, sourceId, updateConfig]
+    [sourceId]
   )
 
   return {
