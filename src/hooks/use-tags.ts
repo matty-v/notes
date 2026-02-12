@@ -12,7 +12,7 @@ export function useTags(sourceId?: string) {
       }
       const tagSet = new Set<string>()
       for (const note of notes) {
-        const noteTags = note.tags.split(',').map((t) => t.trim()).filter(Boolean)
+        const noteTags = (note.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
         noteTags.forEach((tag) => tagSet.add(tag))
       }
       return Array.from(tagSet).sort()

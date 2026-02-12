@@ -32,7 +32,7 @@ function organizeNotesIntoColumns(
   const columnTags = new Set(config.columns.map(col => col.tag))
 
   for (const note of notes) {
-    const noteTags = note.tags.split(',').map(t => t.trim()).filter(Boolean)
+    const noteTags = (note.tags || '').split(',').map(t => t.trim()).filter(Boolean)
 
     // Find first matching column by order
     let assigned = false
@@ -84,7 +84,7 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     const targetColumnId = over.id as string
 
     // Get current note tags
-    const currentTags = note.tags.split(',').map(t => t.trim()).filter(Boolean)
+    const currentTags = (note.tags || '').split(',').map(t => t.trim()).filter(Boolean)
 
     // Get all column tags for filtering
     const columnTags = new Set(config.columns.map(col => col.tag))

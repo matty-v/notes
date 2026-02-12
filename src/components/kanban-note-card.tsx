@@ -32,10 +32,10 @@ export function KanbanNoteCard({ note, onOpenModal }: KanbanNoteCardProps) {
       ref={setNodeRef}
       style={style}
       className="relative group"
-      {...attributes}
     >
       {/* Drag Handle */}
       <div
+        {...attributes}
         {...listeners}
         className="absolute left-2 top-2 z-10 p-1 rounded opacity-0 group-hover:opacity-100 bg-[rgba(18,24,33,0.9)] border border-[rgba(100,150,255,0.3)] cursor-grab active:cursor-grabbing transition-opacity"
         title="Drag to move"
