@@ -26,6 +26,7 @@ export function HomePage() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [createNoteTags, setCreateNoteTags] = useState<string[]>([])
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
 
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
@@ -207,14 +208,22 @@ export function HomePage() {
               updateNote({ id: noteId, tags })
             }
           }}
+          onAddNote={(tag) => {
+            setCreateNoteTags([tag])
+            setIsCreateModalOpen(true)
+          }}
           isLoading={isLoading}
         />
       )}
 
       <CreateNoteModal
         open={isCreateModalOpen}
-        onOpenChange={setIsCreateModalOpen}
+        onOpenChange={(open) => {
+          setIsCreateModalOpen(open)
+          if (!open) setCreateNoteTags([])
+        }}
         onSubmit={createNote}
+        initialTags={createNoteTags}
       />
 
       <NoteModal
@@ -241,7 +250,7 @@ export function HomePage() {
       />
 
       <button
-        onClick={() => setIsCreateModalOpen(true)}
+        onClick={() => { setCreateNoteTags([]); setIsCreateModalOpen(true) }}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50"
         aria-label="New Note"
       >

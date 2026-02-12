@@ -7,9 +7,10 @@ interface CreateNoteModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (data: { title: string; content: string; tags: string }) => Promise<unknown>
+  initialTags?: string[]
 }
 
-export function CreateNoteModal({ open, onOpenChange, onSubmit }: CreateNoteModalProps) {
+export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags }: CreateNoteModalProps) {
   const handleSubmit = async (data: { title: string; content: string; tags: string }) => {
     await onSubmit(data)
     onOpenChange(false)
@@ -22,7 +23,14 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit }: CreateNoteModa
           <DialogTitle>Create New Note</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto">
-          <NoteForm formId="note-create-form" hideActions onSubmit={handleSubmit} submitLabel="Create" />
+          <NoteForm
+            key={initialTags?.join(',') ?? ''}
+            formId="note-create-form"
+            hideActions
+            onSubmit={handleSubmit}
+            submitLabel="Create"
+            initialValues={initialTags?.length ? { title: '', content: '', tags: initialTags } : undefined}
+          />
         </div>
         <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
           <Button

@@ -1,5 +1,6 @@
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { Plus } from 'lucide-react'
 import { KanbanNoteCard } from '@/components/kanban-note-card'
 import type { Note } from '@/lib/types'
 
@@ -8,10 +9,11 @@ interface KanbanColumnProps {
   title: string
   notes: Note[]
   onNoteClick: (note: Note) => void
+  onAddNote?: () => void
   isDefaultColumn?: boolean
 }
 
-export function KanbanColumn({ id, title, notes, onNoteClick, isDefaultColumn = false }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, notes, onNoteClick, onAddNote, isDefaultColumn = false }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: id,
   })
@@ -34,9 +36,20 @@ export function KanbanColumn({ id, title, notes, onNoteClick, isDefaultColumn = 
           <h3 className="font-medium text-foreground text-sm">
             {title}
           </h3>
-          <span className="px-2 py-0.5 text-xs rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)]">
-            {notes.length}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {onAddNote && (
+              <button
+                onClick={onAddNote}
+                className="p-0.5 rounded hover:bg-[rgba(0,212,255,0.15)] text-muted-foreground hover:text-[var(--accent-cyan)] transition-colors"
+                aria-label={`Add note to ${title}`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            )}
+            <span className="px-2 py-0.5 text-xs rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)]">
+              {notes.length}
+            </span>
+          </div>
         </div>
         {isDefaultColumn && (
           <p className="mt-1 text-xs text-muted-foreground" style={{ pointerEvents: 'auto' }}>
