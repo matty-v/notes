@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTemplates } from '@/hooks/use-templates'
 
 interface TemplateSelectorProps {
@@ -17,9 +18,7 @@ export function TemplateSelector({ sourceId, selectedTemplateId, onTemplateChang
   const { templates, isLoading } = useTemplates(sourceId)
 
   if (isLoading) {
-    return (
-      <div className="text-sm text-muted-foreground">Loading templates...</div>
-    )
+    return <Skeleton className="h-10 w-full rounded-lg" />
   }
 
   return (

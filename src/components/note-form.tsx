@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Mic, MicOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { TagInput } from '@/components/tag-input'
 import { useVoiceRecording } from '@/hooks/use-voice-recording'
@@ -12,6 +13,7 @@ interface NoteFormProps {
   onCancel?: () => void
   formId?: string
   hideActions?: boolean
+  isGeneratingAI?: boolean
 }
 
 export function NoteForm({
@@ -21,6 +23,7 @@ export function NoteForm({
   onCancel,
   formId,
   hideActions,
+  isGeneratingAI,
 }: NoteFormProps) {
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [content, setContent] = useState(initialValues?.content ?? '')
@@ -121,7 +124,12 @@ export function NoteForm({
             </Button>
           )}
           <Button type="submit" disabled={isSubmitting || (!title.trim() && !content.trim())}>
-            {isSubmitting ? 'Saving...' : submitLabel}
+            {isSubmitting ? (
+              <>
+                <Spinner size="sm" />
+                {isGeneratingAI ? 'Generating title & tags...' : 'Saving...'}
+              </>
+            ) : submitLabel}
           </Button>
         </div>
       )}

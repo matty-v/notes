@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Trash2, Check } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
@@ -12,10 +13,11 @@ interface NoteModalProps {
   onOpenChange: (open: boolean) => void
   onUpdate: (data: { title: string; content: string; tags: string }) => Promise<unknown>
   onDelete: () => Promise<unknown>
+  isGeneratingAI?: boolean
 }
 
 
-export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: NoteModalProps) {
+export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGeneratingAI }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -72,6 +74,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
                 }}
                 onSubmit={handleUpdate}
                 submitLabel="Update"
+                isGeneratingAI={isGeneratingAI}
               />
             </div>
             <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
@@ -126,8 +129,8 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: Note
                 }}
                 disabled={isDeleting}
               >
-                <Trash2 className="h-4 w-4 mr-1.5" />
-                {isDeleting ? 'Deleting...' : 'Delete'}
+                {isDeleting ? <Spinner size="sm" /> : <Trash2 className="h-4 w-4" />}
+                <span className="ml-1.5">{isDeleting ? 'Deleting...' : 'Delete'}</span>
               </Button>
               <Button
                 variant="ghost"

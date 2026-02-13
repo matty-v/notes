@@ -12,9 +12,10 @@ interface CreateNoteModalProps {
   onSubmit: (data: { title: string; content: string; tags: string; skipAutoGeneration?: boolean }) => Promise<unknown>
   initialTags?: string[]
   sourceId?: string
+  isGeneratingAI?: boolean
 }
 
-export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId }: CreateNoteModalProps) {
+export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId, isGeneratingAI }: CreateNoteModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState('blank')
   const { templates } = useTemplates(sourceId)
 
@@ -69,6 +70,7 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
             onSubmit={handleSubmit}
             submitLabel="Create"
             initialValues={templateFormValues}
+            isGeneratingAI={isGeneratingAI}
           />
         </div>
         <DialogFooter className="pt-4">

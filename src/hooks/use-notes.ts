@@ -24,11 +24,12 @@ interface UseNotesOptions {
   sortOrder?: SortOrder
   sourceId?: string
   spreadsheetId?: string
+  onGeneratingMetadata?: (isGenerating: boolean) => void
 }
 
 export function useNotes(options: UseNotesOptions = {}) {
   const queryClient = useQueryClient()
-  const { search = '', tagFilter = [], sortOrder = 'newest', sourceId, spreadsheetId } = options
+  const { search = '', tagFilter = [], sortOrder = 'newest', sourceId, spreadsheetId, onGeneratingMetadata } = options
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', sourceId, search, tagFilter, sortOrder],
@@ -81,14 +82,19 @@ export function useNotes(options: UseNotesOptions = {}) {
 
       // Auto-generate title and/or tags if they're empty (unless skipAutoGeneration is true)
       if (!input.skipAutoGeneration && (shouldGenerateTitle(title) || shouldGenerateTags(tags))) {
-        const generated = await generateMetadata(input.content)
-        if (generated) {
-          if (shouldGenerateTitle(title)) {
-            title = generated.title
+        onGeneratingMetadata?.(true)
+        try {
+          const generated = await generateMetadata(input.content)
+          if (generated) {
+            if (shouldGenerateTitle(title)) {
+              title = generated.title
+            }
+            if (shouldGenerateTags(tags)) {
+              tags = generated.tags.join(', ')
+            }
           }
-          if (shouldGenerateTags(tags)) {
-            tags = generated.tags.join(', ')
-          }
+        } finally {
+          onGeneratingMetadata?.(false)
         }
       }
 
@@ -157,14 +163,19 @@ export function useNotes(options: UseNotesOptions = {}) {
 
       // Auto-generate title and/or tags if they're empty and content exists
       if (shouldGenerateTitle(title) || shouldGenerateTags(tags)) {
-        const generated = await generateMetadata(content)
-        if (generated) {
-          if (shouldGenerateTitle(title)) {
-            title = generated.title
+        onGeneratingMetadata?.(true)
+        try {
+          const generated = await generateMetadata(content)
+          if (generated) {
+            if (shouldGenerateTitle(title)) {
+              title = generated.title
+            }
+            if (shouldGenerateTags(tags)) {
+              tags = generated.tags.join(', ')
+            }
           }
-          if (shouldGenerateTags(tags)) {
-            tags = generated.tags.join(', ')
-          }
+        } finally {
+          onGeneratingMetadata?.(false)
         }
       }
 
