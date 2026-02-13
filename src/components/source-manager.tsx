@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Pencil, Trash2, Plus, X, Check, Download } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import type { NoteSource } from '@/lib/types'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
 import { exportNotesForSource } from '@/lib/csv-export'
@@ -118,7 +119,7 @@ export function SourceManager({
                   disabled={isInitializing || !editName.trim() || !editSpreadsheetId.trim()}
                   className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[var(--accent-cyan)] text-[#0a0e14] rounded-lg hover:bg-[rgba(0,212,255,0.8)] transition-all duration-300 text-sm font-medium disabled:opacity-50"
                 >
-                  <Check className="h-3 w-3" /> {isInitializing ? 'Saving...' : 'Save'}
+                  {isInitializing ? <Spinner size="sm" /> : <Check className="h-3 w-3" />} {isInitializing ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </div>
@@ -201,7 +202,7 @@ export function SourceManager({
               disabled={isInitializing || !newName.trim() || !newSpreadsheetId.trim()}
               className="flex-1 px-3 py-2 bg-[var(--accent-cyan)] text-[#0a0e14] rounded-lg hover:bg-[rgba(0,212,255,0.8)] transition-all duration-300 text-sm font-medium disabled:opacity-50"
             >
-              {isInitializing ? 'Connecting...' : 'Add & Connect'}
+              {isInitializing ? <><Spinner size="sm" /> Connecting...</> : 'Add & Connect'}
             </button>
           </div>
           {status && <p className="text-xs text-[var(--accent-pink)]">{status}</p>}

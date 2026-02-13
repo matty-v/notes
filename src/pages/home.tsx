@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { NoteCard } from '@/components/note-card'
+import { NoteCardSkeleton } from '@/components/note-card-skeleton'
 import { NoteModal } from '@/components/note-modal'
 import { CreateNoteModal } from '@/components/create-note-modal'
 import { TagFilter } from '@/components/tag-filter'
@@ -30,6 +31,7 @@ export function HomePage() {
   const [createNoteTags, setCreateNoteTags] = useState<string[]>([])
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
 
   const queryClient = useQueryClient()
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
@@ -50,6 +52,7 @@ export function HomePage() {
     sortOrder: 'newest',
     sourceId: activeSource?.id,
     spreadsheetId: activeSource?.spreadsheetId,
+    onGeneratingMetadata: setIsGeneratingAI,
   })
 
   // Show migration warning if present
@@ -200,7 +203,11 @@ export function HomePage() {
       {viewMode === 'list' ? (
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <p className="text-center text-muted-foreground font-light">Loading...</p>
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <NoteCardSkeleton key={i} variant="list" />
+              ))}
+            </div>
           ) : notes.length === 0 ? (
             <p className="text-center text-muted-foreground font-light py-8">
               {search || tagFilter.length > 0
@@ -241,7 +248,11 @@ export function HomePage() {
       ) : viewMode === 'grid' ? (
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <p className="text-center text-muted-foreground font-light">Loading...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <NoteCardSkeleton key={i} variant="grid" />
+              ))}
+            </div>
           ) : notes.length === 0 ? (
             <p className="text-center text-muted-foreground font-light py-8">
               {search || tagFilter.length > 0
@@ -290,12 +301,14 @@ export function HomePage() {
         onSubmit={createNote}
         initialTags={createNoteTags}
         sourceId={activeSource?.id}
+        isGeneratingAI={isGeneratingAI}
       />
 
       <NoteModal
         note={selectedNote}
         open={isModalOpen}
         onOpenChange={handleCloseModal}
+        isGeneratingAI={isGeneratingAI}
         onUpdate={(data) => {
           if (selectedNote) {
             return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then((updated) => {

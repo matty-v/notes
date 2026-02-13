@@ -3,6 +3,7 @@ import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSen
 import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KanbanColumn } from '@/components/kanban-column'
+import { KanbanColumnSkeleton } from '@/components/kanban-column-skeleton'
 import { KanbanNoteCard } from '@/components/kanban-note-card'
 import type { Note, KanbanBoardConfig } from '@/lib/types'
 
@@ -145,8 +146,12 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-center text-muted-foreground font-light">Loading...</p>
+      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+        <div className="flex gap-4 h-full p-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <KanbanColumnSkeleton key={i} />
+          ))}
+        </div>
       </div>
     )
   }

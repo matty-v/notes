@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useTags } from '@/hooks/use-tags'
 
 interface TagFilterProps {
@@ -8,7 +9,7 @@ interface TagFilterProps {
 }
 
 export function TagFilter({ selected, onChange, sourceId }: TagFilterProps) {
-  const { tags } = useTags(sourceId)
+  const { tags, isLoading } = useTags(sourceId)
 
   const toggleTag = (tag: string) => {
     if (selected.includes(tag)) {
@@ -16,6 +17,16 @@ export function TagFilter({ selected, onChange, sourceId }: TagFilterProps) {
     } else {
       onChange([...selected, tag])
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-nowrap gap-1 overflow-x-auto pb-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-6 w-16 rounded-lg flex-shrink-0" />
+        ))}
+      </div>
+    )
   }
 
   if (tags.length === 0) return null
