@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CreateNoteModal } from '@/components/create-note-modal'
 import { NoteModal } from '@/components/note-modal'
+import { LoadingOverlay } from '@/components/loading-overlay'
 import type { Note } from '@/lib/types'
 
 // Mock useTemplates since CreateNoteModal depends on it
@@ -167,13 +168,13 @@ describe('NoteModal loading states', () => {
   })
 })
 
-describe('useNotes exposes isCreating and isUpdating', () => {
+describe('useNotes exposes isCreating, isUpdating, and isDeleting', () => {
   beforeEach(async () => {
     const { db } = await import('@/lib/db')
     await db.notes.clear()
   })
 
-  it('should expose isCreating and isUpdating flags', async () => {
+  it('should expose isCreating, isUpdating, and isDeleting flags', async () => {
     const { renderHook } = await import('@testing-library/react')
     const { useNotes } = await import('@/hooks/use-notes')
 
@@ -189,5 +190,45 @@ describe('useNotes exposes isCreating and isUpdating', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.isCreating).toBe(false)
     expect(result.current.isUpdating).toBe(false)
+    expect(result.current.isDeleting).toBe(false)
+  })
+})
+
+describe('LoadingOverlay', () => {
+  it('should render overlay with spinner and message when visible', () => {
+    render(<LoadingOverlay visible={true} message="Creating note..." />)
+
+    const overlay = screen.getByTestId('loading-overlay')
+    expect(overlay).toBeInTheDocument()
+    expect(screen.getByText('Creating note...')).toBeInTheDocument()
+  })
+
+  it('should not render when visible is false', () => {
+    render(<LoadingOverlay visible={false} message="Creating note..." />)
+
+    expect(screen.queryByTestId('loading-overlay')).not.toBeInTheDocument()
+  })
+
+  it('should show default message when no message provided', () => {
+    render(<LoadingOverlay visible={true} />)
+
+    expect(screen.getByText('Processing...')).toBeInTheDocument()
+  })
+
+  it('should have aria-busy attribute for accessibility', () => {
+    render(<LoadingOverlay visible={true} message="Deleting note..." />)
+
+    const overlay = screen.getByTestId('loading-overlay')
+    expect(overlay).toHaveAttribute('aria-busy', 'true')
+    expect(overlay).toHaveAttribute('aria-label', 'Deleting note...')
+  })
+
+  it('should cover the full screen with fixed positioning', () => {
+    render(<LoadingOverlay visible={true} />)
+
+    const overlay = screen.getByTestId('loading-overlay')
+    expect(overlay.className).toContain('fixed')
+    expect(overlay.className).toContain('inset-0')
+    expect(overlay.className).toContain('z-[100]')
   })
 })

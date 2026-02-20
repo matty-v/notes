@@ -311,6 +311,7 @@ export function useNotes(options: UseNotesOptions = {}) {
     isLoading,
     isCreating: createNote.isPending,
     isUpdating: updateNote.isPending,
+    isDeleting: deleteNote.isPending,
     createNote: createNote.mutateAsync,
     updateNote: updateNote.mutateAsync,
     deleteNote: deleteNote.mutateAsync,

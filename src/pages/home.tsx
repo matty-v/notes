@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { NoteCard } from '@/components/note-card'
 import { NoteCardSkeleton } from '@/components/note-card-skeleton'
+import { LoadingOverlay } from '@/components/loading-overlay'
 import { NoteModal } from '@/components/note-modal'
 import { CreateNoteModal } from '@/components/create-note-modal'
 import { TagFilter } from '@/components/tag-filter'
@@ -48,7 +49,7 @@ export function HomePage() {
   const { viewMode, setViewMode } = useViewMode()
   const kanbanConfig = useKanbanConfig(activeSource?.id ?? 'default')
 
-  const { notes, isLoading, isCreating, isUpdating, createNote, updateNote, deleteNote } = useNotes({
+  const { notes, isLoading, isCreating, isUpdating, isDeleting, createNote, updateNote, deleteNote } = useNotes({
     search,
     tagFilter,
     sortOrder: 'newest',
@@ -56,6 +57,17 @@ export function HomePage() {
     spreadsheetId: activeSource?.spreadsheetId,
     onGeneratingMetadata: setIsGeneratingAI,
   })
+
+  const isOperationPending = isCreating || isUpdating || isDeleting
+  const overlayMessage = isGeneratingAI
+    ? 'Generating with AI...'
+    : isCreating
+      ? 'Creating note...'
+      : isUpdating
+        ? 'Updating note...'
+        : isDeleting
+          ? 'Deleting note...'
+          : 'Processing...'
 
   // Show migration warning if present
   useEffect(() => {
@@ -147,6 +159,8 @@ export function HomePage() {
 
   return (
     <div className="h-screen flex flex-col w-full p-4 lg:p-6">
+      <LoadingOverlay visible={isOperationPending} message={overlayMessage} />
+
       {/* Top bar with source selector, sync status, and new note button */}
       <div className="flex items-center justify-between mb-6 gap-3">
         <div className="flex items-center gap-3 min-w-0">
