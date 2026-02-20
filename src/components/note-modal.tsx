@@ -14,10 +14,11 @@ interface NoteModalProps {
   onUpdate: (data: { title: string; content: string; tags: string }) => Promise<unknown>
   onDelete: () => Promise<unknown>
   isGeneratingAI?: boolean
+  isUpdating?: boolean
 }
 
 
-export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGeneratingAI }: NoteModalProps) {
+export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGeneratingAI, isUpdating }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -81,10 +82,20 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
               <Button
                 variant="ghost"
                 size="sm"
+                disabled={isUpdating}
                 onClick={() => (document.getElementById('note-edit-form') as HTMLFormElement)?.requestSubmit()}
               >
-                <Check className="h-4 w-4 mr-1.5" />
-                Update
+                {isUpdating ? (
+                  <>
+                    <Spinner size="sm" />
+                    {isGeneratingAI ? 'Generating...' : 'Updating...'}
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-1.5" />
+                    Update
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </>
@@ -127,7 +138,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
                   e.stopPropagation()
                   handleDelete()
                 }}
-                disabled={isDeleting}
+                disabled={isDeleting || isUpdating}
               >
                 {isDeleting ? <Spinner size="sm" /> : <Trash2 className="h-4 w-4" />}
                 <span className="ml-1.5">{isDeleting ? 'Deleting...' : 'Delete'}</span>
@@ -135,6 +146,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
               <Button
                 variant="ghost"
                 size="sm"
+                disabled={isDeleting || isUpdating}
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsEditing(true)

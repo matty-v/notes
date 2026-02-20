@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { NoteForm } from '@/components/note-form'
@@ -13,9 +14,10 @@ interface CreateNoteModalProps {
   initialTags?: string[]
   sourceId?: string
   isGeneratingAI?: boolean
+  isCreating?: boolean
 }
 
-export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId, isGeneratingAI }: CreateNoteModalProps) {
+export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId, isGeneratingAI, isCreating }: CreateNoteModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState('blank')
   const { templates } = useTemplates(sourceId)
 
@@ -85,10 +87,20 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
             <Button
               variant="ghost"
               size="sm"
+              disabled={isCreating}
               onClick={() => (document.getElementById('note-create-form') as HTMLFormElement)?.requestSubmit()}
             >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Create
+              {isCreating ? (
+                <>
+                  <Spinner size="sm" />
+                  {isGeneratingAI ? 'Generating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Create
+                </>
+              )}
             </Button>
           </div>
         </DialogFooter>

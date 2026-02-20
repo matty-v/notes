@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, RefreshCw } from 'lucide-react'
+import { Search, Plus, RefreshCw, Loader2 } from 'lucide-react'
+import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { NoteCard } from '@/components/note-card'
 import { NoteCardSkeleton } from '@/components/note-card-skeleton'
@@ -31,6 +32,7 @@ export function HomePage() {
   const [createNoteTags, setCreateNoteTags] = useState<string[]>([])
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isColdLoading, setIsColdLoading] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
 
   const queryClient = useQueryClient()
@@ -46,7 +48,7 @@ export function HomePage() {
   const { viewMode, setViewMode } = useViewMode()
   const kanbanConfig = useKanbanConfig(activeSource?.id ?? 'default')
 
-  const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
+  const { notes, isLoading, isCreating, isUpdating, createNote, updateNote, deleteNote } = useNotes({
     search,
     tagFilter,
     sortOrder: 'newest',
@@ -71,7 +73,7 @@ export function HomePage() {
   // Always perform hard refresh on load and when source changes
   useEffect(() => {
     if (activeSource?.id && activeSource?.spreadsheetId) {
-      // Immediately clear the cache for this source before fetching
+      setIsColdLoading(true)
       const clearAndRefresh = async () => {
         try {
           // Hard refresh: clear cache and fetch fresh data
@@ -85,6 +87,8 @@ export function HomePage() {
             title: 'Failed to load notes',
             description: 'Could not fetch notes from Google Sheets. Check your connection.',
           })
+        } finally {
+          setIsColdLoading(false)
         }
       }
 
@@ -200,7 +204,14 @@ export function HomePage() {
         <TagFilter selected={tagFilter} onChange={setTagFilter} sourceId={activeSource?.id} />
       </div>
 
-      {viewMode === 'list' ? (
+      {isColdLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 py-16">
+          <Spinner size="lg" />
+          <p className="text-sm text-muted-foreground font-light animate-pulse">
+            Loading notes from Google Sheets...
+          </p>
+        </div>
+      ) : viewMode === 'list' ? (
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="space-y-3">
@@ -295,6 +306,7 @@ export function HomePage() {
       <CreateNoteModal
         open={isCreateModalOpen}
         onOpenChange={(open) => {
+          if (isCreating) return // Block closing while creating
           setIsCreateModalOpen(open)
           if (!open) setCreateNoteTags([])
         }}
@@ -302,6 +314,7 @@ export function HomePage() {
         initialTags={createNoteTags}
         sourceId={activeSource?.id}
         isGeneratingAI={isGeneratingAI}
+        isCreating={isCreating}
       />
 
       <NoteModal
@@ -309,6 +322,7 @@ export function HomePage() {
         open={isModalOpen}
         onOpenChange={handleCloseModal}
         isGeneratingAI={isGeneratingAI}
+        isUpdating={isUpdating}
         onUpdate={(data) => {
           if (selectedNote) {
             return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then((updated) => {
@@ -330,10 +344,11 @@ export function HomePage() {
 
       <button
         onClick={() => { setCreateNoteTags([]); setIsCreateModalOpen(true) }}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50"
+        disabled={isCreating}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="New Note"
       >
-        <Plus className="h-6 w-6" />
+        {isCreating ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plus className="h-6 w-6" />}
       </button>
 
       <KanbanConfigDialog
