@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
+import { BlockingOverlayProvider } from '@/components/blocking-overlay'
 import { HomePage } from '@/pages/home'
 import { db } from '@/lib/db'
 import type { Note } from '@/lib/types'
@@ -67,7 +68,9 @@ function createWrapper() {
   })
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>{children}</BrowserRouter>
+      <BlockingOverlayProvider>
+        <BrowserRouter>{children}</BrowserRouter>
+      </BlockingOverlayProvider>
     </QueryClientProvider>
   )
 }

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { HomePage } from '@/pages/home'
 import { SheetsSetupWizard } from '@/components/sheets'
 import { AnimatedBackground } from '@/components/animated-background'
+import { BlockingOverlayProvider } from '@/components/blocking-overlay'
 import { Toaster } from '@/components/ui/toaster'
 import { useSources } from '@/hooks/use-sources'
 import { useSettings } from '@/hooks/use-settings'
@@ -68,8 +69,10 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContent />
-      <Toaster />
+      <BlockingOverlayProvider>
+        <AppContent />
+        <Toaster />
+      </BlockingOverlayProvider>
     </QueryClientProvider>
   )
 }

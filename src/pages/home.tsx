@@ -14,6 +14,7 @@ import { SourceSelector } from '@/components/source-selector'
 import { ViewModeToggle } from '@/components/view-mode-toggle'
 import { KanbanBoardView } from '@/components/kanban-board-view'
 import { KanbanConfigDialog } from '@/components/kanban-config-dialog'
+import { useBlockingOverlay } from '@/components/blocking-overlay'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
@@ -34,8 +35,8 @@ export function HomePage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
-  const [isMutating, setIsMutating] = useState(false)
 
+  const { withOverlay } = useBlockingOverlay()
   const queryClient = useQueryClient()
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const {
@@ -294,7 +295,7 @@ export function HomePage() {
           onUpdateNote={(noteId, tags) => {
             const note = notes.find((n) => n.id === noteId)
             if (note) {
-              updateNote({ id: noteId, tags })
+              withOverlay(() => updateNote({ id: noteId, tags }), 'Updating note...')
             }
           }}
           onAddNote={(tag) => {
@@ -308,17 +309,11 @@ export function HomePage() {
       <CreateNoteModal
         open={isCreateModalOpen}
         onOpenChange={(open) => {
-          if (isMutating) return // Block closing while saving
           setIsCreateModalOpen(open)
           if (!open) setCreateNoteTags([])
         }}
         onSubmit={async (data) => {
-          setIsMutating(true)
-          try {
-            await createNote(data)
-          } finally {
-            setIsMutating(false)
-          }
+          await withOverlay(() => createNote(data), 'Creating note...')
         }}
         initialTags={createNoteTags}
         sourceId={activeSource?.id}
@@ -332,18 +327,21 @@ export function HomePage() {
         isGeneratingAI={isGeneratingAI}
         onUpdate={(data) => {
           if (selectedNote) {
-            return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then((updated) => {
-              // Update the selected note with the returned data from the mutation
+            return withOverlay(async () => {
+              const updated = await updateNote({ id: selectedNote.id, ...data })
               if (updated) {
                 setSelectedNote(updated)
               }
-            })
+            }, 'Updating note...')
           }
           return Promise.resolve()
         }}
         onDelete={() => {
           if (selectedNote) {
-            return (deleteNote(selectedNote.id) || Promise.resolve()).then(handleCloseModal)
+            return withOverlay(async () => {
+              await deleteNote(selectedNote.id)
+              handleCloseModal()
+            }, 'Deleting note...')
           }
           return Promise.resolve()
         }}
@@ -351,7 +349,7 @@ export function HomePage() {
 
       <button
         onClick={() => { setCreateNoteTags([]); setIsCreateModalOpen(true) }}
-        disabled={isMutating || isInitialLoad}
+        disabled={isInitialLoad}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="New Note"
       >
