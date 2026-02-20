@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, RefreshCw } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import { NoteCard } from '@/components/note-card'
 import { NoteCardSkeleton } from '@/components/note-card-skeleton'
 import { NoteModal } from '@/components/note-modal'
@@ -13,6 +14,7 @@ import { SourceSelector } from '@/components/source-selector'
 import { ViewModeToggle } from '@/components/view-mode-toggle'
 import { KanbanBoardView } from '@/components/kanban-board-view'
 import { KanbanConfigDialog } from '@/components/kanban-config-dialog'
+import { useBlockingOverlay } from '@/components/blocking-overlay'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
@@ -32,7 +34,9 @@ export function HomePage() {
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
+  const { withOverlay } = useBlockingOverlay()
   const queryClient = useQueryClient()
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const {
@@ -70,26 +74,31 @@ export function HomePage() {
 
   // Always perform hard refresh on load and when source changes
   useEffect(() => {
-    if (activeSource?.id && activeSource?.spreadsheetId) {
-      // Immediately clear the cache for this source before fetching
-      const clearAndRefresh = async () => {
-        try {
-          // Hard refresh: clear cache and fetch fresh data
-          await refreshCacheFromRemote(activeSource.id, activeSource.spreadsheetId)
-          await queryClient.invalidateQueries({ queryKey: ['notes'] })
-          await queryClient.invalidateQueries({ queryKey: ['tags'] })
-        } catch (err) {
-          console.error('Cache refresh failed:', err)
-          toast({
-            variant: 'destructive',
-            title: 'Failed to load notes',
-            description: 'Could not fetch notes from Google Sheets. Check your connection.',
-          })
-        }
-      }
-
-      clearAndRefresh()
+    if (!activeSource?.id || !activeSource?.spreadsheetId) {
+      setIsInitialLoad(false)
+      return
     }
+
+    setIsInitialLoad(true)
+    const clearAndRefresh = async () => {
+      try {
+        // Hard refresh: clear cache and fetch fresh data
+        await refreshCacheFromRemote(activeSource.id, activeSource.spreadsheetId)
+        await queryClient.invalidateQueries({ queryKey: ['notes'] })
+        await queryClient.invalidateQueries({ queryKey: ['tags'] })
+      } catch (err) {
+        console.error('Cache refresh failed:', err)
+        toast({
+          variant: 'destructive',
+          title: 'Failed to load notes',
+          description: 'Could not fetch notes from Google Sheets. Check your connection.',
+        })
+      } finally {
+        setIsInitialLoad(false)
+      }
+    }
+
+    clearAndRefresh()
   }, [activeSource?.id, activeSource?.spreadsheetId, queryClient])
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -200,7 +209,12 @@ export function HomePage() {
         <TagFilter selected={tagFilter} onChange={setTagFilter} sourceId={activeSource?.id} />
       </div>
 
-      {viewMode === 'list' ? (
+      {isInitialLoad ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3">
+          <Spinner size="lg" />
+          <p className="text-sm text-muted-foreground font-light">Loading notes...</p>
+        </div>
+      ) : viewMode === 'list' ? (
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="space-y-3">
@@ -281,7 +295,7 @@ export function HomePage() {
           onUpdateNote={(noteId, tags) => {
             const note = notes.find((n) => n.id === noteId)
             if (note) {
-              updateNote({ id: noteId, tags })
+              withOverlay(() => updateNote({ id: noteId, tags }), 'Updating note...')
             }
           }}
           onAddNote={(tag) => {
@@ -298,7 +312,9 @@ export function HomePage() {
           setIsCreateModalOpen(open)
           if (!open) setCreateNoteTags([])
         }}
-        onSubmit={createNote}
+        onSubmit={async (data) => {
+          await withOverlay(() => createNote(data), 'Creating note...')
+        }}
         initialTags={createNoteTags}
         sourceId={activeSource?.id}
         isGeneratingAI={isGeneratingAI}
@@ -311,18 +327,21 @@ export function HomePage() {
         isGeneratingAI={isGeneratingAI}
         onUpdate={(data) => {
           if (selectedNote) {
-            return (updateNote({ id: selectedNote.id, ...data }) || Promise.resolve()).then((updated) => {
-              // Update the selected note with the returned data from the mutation
+            return withOverlay(async () => {
+              const updated = await updateNote({ id: selectedNote.id, ...data })
               if (updated) {
                 setSelectedNote(updated)
               }
-            })
+            }, 'Updating note...')
           }
           return Promise.resolve()
         }}
         onDelete={() => {
           if (selectedNote) {
-            return (deleteNote(selectedNote.id) || Promise.resolve()).then(handleCloseModal)
+            return withOverlay(async () => {
+              await deleteNote(selectedNote.id)
+              handleCloseModal()
+            }, 'Deleting note...')
           }
           return Promise.resolve()
         }}
@@ -330,7 +349,8 @@ export function HomePage() {
 
       <button
         onClick={() => { setCreateNoteTags([]); setIsCreateModalOpen(true) }}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50"
+        disabled={isInitialLoad}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-gradient-to-r from-[var(--accent-cyan)] to-[var(--accent-purple)] hover:from-[var(--accent-purple)] hover:to-[var(--accent-pink)] text-[#0a0e14] shadow-lg hover:shadow-[0_0_24px_rgba(0,212,255,0.4)] transition-all duration-300 flex items-center justify-center z-50 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="New Note"
       >
         <Plus className="h-6 w-6" />

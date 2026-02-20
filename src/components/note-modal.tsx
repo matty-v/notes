@@ -20,12 +20,14 @@ interface NoteModalProps {
 export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGeneratingAI }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   // Reset editing state when modal closes to avoid state persisting across notes
   useEffect(() => {
     if (!open) {
       setIsEditing(false)
       setIsDeleting(false)
+      setIsUpdating(false)
     }
   }, [open])
 
@@ -51,8 +53,13 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
   }
 
   const handleUpdate = async (data: { title: string; content: string; tags: string }) => {
-    await onUpdate(data)
-    setIsEditing(false)
+    setIsUpdating(true)
+    try {
+      await onUpdate(data)
+      setIsEditing(false)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   return (
@@ -81,10 +88,28 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => setIsEditing(false)}
+                disabled={isUpdating}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isUpdating}
                 onClick={() => (document.getElementById('note-edit-form') as HTMLFormElement)?.requestSubmit()}
               >
-                <Check className="h-4 w-4 mr-1.5" />
-                Update
+                {isUpdating ? (
+                  <>
+                    <Spinner size="sm" className="mr-1.5" />
+                    {isGeneratingAI ? 'Generating...' : 'Updating...'}
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-1.5" />
+                    Update
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </>
@@ -135,6 +160,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
               <Button
                 variant="ghost"
                 size="sm"
+                disabled={isDeleting}
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsEditing(true)
