@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { NoteForm } from '@/components/note-form'
 import { TemplateSelector } from '@/components/template-selector'
 import { useTemplates } from '@/hooks/use-templates'
@@ -17,12 +18,14 @@ interface CreateNoteModalProps {
 
 export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId, isGeneratingAI }: CreateNoteModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState('blank')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { templates } = useTemplates(sourceId)
 
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setSelectedTemplateId('blank')
+      setIsSubmitting(false)
     }
   }, [open])
 
@@ -49,11 +52,16 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
   })()
 
   const handleSubmit = async (data: { title: string; content: string; tags: string }) => {
-    await onSubmit({
-      ...data,
-      skipAutoGeneration: selectedTemplateId !== 'blank' && selectedTemplateId !== '',
-    })
-    onOpenChange(false)
+    setIsSubmitting(true)
+    try {
+      await onSubmit({
+        ...data,
+        skipAutoGeneration: selectedTemplateId !== 'blank' && selectedTemplateId !== '',
+      })
+      onOpenChange(false)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -85,10 +93,20 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
             <Button
               variant="ghost"
               size="sm"
+              disabled={isSubmitting}
               onClick={() => (document.getElementById('note-create-form') as HTMLFormElement)?.requestSubmit()}
             >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Create
+              {isSubmitting ? (
+                <>
+                  <Spinner size="sm" className="mr-1.5" />
+                  {isGeneratingAI ? 'Generating...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  Create
+                </>
+              )}
             </Button>
           </div>
         </DialogFooter>
