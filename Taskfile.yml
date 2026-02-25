@@ -1,0 +1,29 @@
+version: "3"
+
+tasks:
+  check:
+    desc: Run build, lint, and tests
+    cmds:
+      - npm run build
+      - npx eslint src/ --ignore-pattern src/hooks/use-voice-recording.ts
+      - npm run test
+
+  build:
+    desc: TypeScript check + Vite production build
+    cmds:
+      - npm run build
+
+  lint:
+    desc: ESLint check
+    cmds:
+      - npm run lint
+
+  test:
+    desc: Run Vitest unit tests
+    cmds:
+      - npm run test
+
+  dev:
+    desc: Start Vite dev server
+    cmds:
+      - npm run dev

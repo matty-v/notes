@@ -1,5 +1,6 @@
 import { db } from './db'
 import { getNotesSheet, isApiReachable } from './notes-api'
+import { populateFromRows } from './row-index-cache'
 import type { Note } from './types'
 
 /**
@@ -19,6 +20,9 @@ export async function refreshCacheFromRemote(
   // Fetch all remote notes
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const remoteNotes = (await notesSheet.getRows()) as any[]
+
+  // Populate row index cache (rows are 0-indexed, row 1 is headers)
+  populateFromRows(remoteNotes)
 
   // Clear existing notes for this source
   await db.notes.where('sourceId').equals(sourceId).delete()
