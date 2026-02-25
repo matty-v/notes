@@ -132,10 +132,6 @@ export function HomePage() {
       await refreshCacheFromRemote(activeSource.id, activeSource.spreadsheetId)
       await queryClient.invalidateQueries({ queryKey: ['notes'] })
       await queryClient.invalidateQueries({ queryKey: ['tags'] })
-      toast({
-        title: 'Cache refreshed',
-        description: 'Notes refreshed from Google Sheets',
-      })
     } catch (err) {
       console.error('Cache refresh failed:', err)
       toast({
