@@ -1,9 +1,13 @@
+import { useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { v4 as uuid } from 'uuid'
 import { db } from '@/lib/db'
-import { getNotesSheet } from '@/lib/notes-api'
-import { SheetsDbError } from '@/services/sheetsdb/SheetsDbError'
 import { toast } from '@/hooks/use-toast'
+import {
+  syncCreateToRemote,
+  syncUpdateToRemote,
+  syncDeleteToRemote,
+} from '@/lib/sync-remote'
 import type { Note, SortOrder } from '@/lib/types'
 import {
   generateMetadata,
@@ -30,6 +34,9 @@ interface UseNotesOptions {
 export function useNotes(options: UseNotesOptions = {}) {
   const queryClient = useQueryClient()
   const { search = '', tagFilter = [], sortOrder = 'newest', sourceId, spreadsheetId, onGeneratingMetadata } = options
+
+  // Snapshot storage for rollback on remote sync failure
+  const snapshotsRef = useRef(new Map<string, Note | null>())
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ['notes', sourceId, search, tagFilter, sortOrder],
@@ -72,7 +79,6 @@ export function useNotes(options: UseNotesOptions = {}) {
 
   const createNote = useMutation({
     mutationFn: async (input: CreateNoteInput) => {
-      // Validate spreadsheetId
       if (!spreadsheetId) {
         throw new Error('No active source configured')
       }
@@ -80,7 +86,7 @@ export function useNotes(options: UseNotesOptions = {}) {
       let title = input.title
       let tags = input.tags
 
-      // Auto-generate title and/or tags if they're empty (unless skipAutoGeneration is true)
+      // Auto-generate title and/or tags if empty (still awaits Claude API)
       if (!input.skipAutoGeneration && (shouldGenerateTitle(title) || shouldGenerateTags(tags))) {
         onGeneratingMetadata?.(true)
         try {
@@ -109,19 +115,38 @@ export function useNotes(options: UseNotesOptions = {}) {
         updatedAt: now,
       }
 
-      // Write to remote FIRST
-      const notesSheet = getNotesSheet(spreadsheetId)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await notesSheet.createRow(note as any)
-
-      // Update local cache ONLY after remote success
+      // Write to IndexedDB immediately
       await db.notes.add(note)
+
+      // Store null snapshot (no previous state for create — rollback = delete)
+      snapshotsRef.current.set(note.id, null)
 
       return note
     },
-    onSuccess: () => {
+    onSuccess: (note) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] })
       queryClient.invalidateQueries({ queryKey: ['tags'] })
+
+      // Background sync to remote
+      if (spreadsheetId) {
+        syncCreateToRemote(note, spreadsheetId)
+          .then(() => {
+            snapshotsRef.current.delete(note.id)
+          })
+          .catch(async (err) => {
+            console.error('Remote sync failed for create:', err)
+            snapshotsRef.current.delete(note.id)
+            // Rollback: remove from IndexedDB
+            await db.notes.delete(note.id)
+            queryClient.invalidateQueries({ queryKey: ['notes'] })
+            queryClient.invalidateQueries({ queryKey: ['tags'] })
+            toast({
+              variant: 'destructive',
+              title: 'Sync failed',
+              description: 'Note was not saved to Google Sheets. It has been removed.',
+            })
+          })
+      }
     },
     onError: (error: Error) => {
       let title = 'Failed to create note'
@@ -130,14 +155,6 @@ export function useNotes(options: UseNotesOptions = {}) {
       if (error.message.includes('No active source')) {
         title = 'No source configured'
         description = 'Configure Google Sheets source in settings'
-      } else if (error instanceof SheetsDbError) {
-        if (error.status === 401 || error.status === 403) {
-          title = 'Permission denied'
-          description = 'Check your Google Sheets permissions'
-        } else if (error.status >= 500) {
-          title = 'Server error'
-          description = 'Google Sheets API is experiencing issues'
-        }
       } else if (error.message.includes('Failed to fetch')) {
         title = 'Connection error'
         description = 'Check your internet connection'
@@ -149,7 +166,6 @@ export function useNotes(options: UseNotesOptions = {}) {
 
   const updateNote = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Note> & { id: string }) => {
-      // Validate spreadsheetId
       if (!spreadsheetId) {
         throw new Error('No active source configured')
       }
@@ -161,7 +177,7 @@ export function useNotes(options: UseNotesOptions = {}) {
       let tags = updates.tags !== undefined ? updates.tags : existing.tags
       const content = updates.content !== undefined ? updates.content : existing.content
 
-      // Auto-generate title and/or tags if they're empty and content exists
+      // Auto-generate title and/or tags if empty
       if (shouldGenerateTitle(title) || shouldGenerateTags(tags)) {
         onGeneratingMetadata?.(true)
         try {
@@ -188,28 +204,38 @@ export function useNotes(options: UseNotesOptions = {}) {
         updatedAt: new Date().toISOString(),
       }
 
-      // Write to remote FIRST
-      const notesSheet = getNotesSheet(spreadsheetId)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rows = (await notesSheet.getRows()) as any[]
-      const rowIndex = rows.findIndex((r) => r.id === id)
-
-      if (rowIndex < 0) {
-        throw new Error('Note not found in remote sheet')
-      }
-
-      // Row index + 2 because row 1 is headers and API rows are 0-indexed
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await notesSheet.updateRow(rowIndex + 2, updated as any)
-
-      // Update local cache ONLY after remote success
+      // Store snapshot for rollback, then write to IndexedDB immediately
+      snapshotsRef.current.set(id, existing)
       await db.notes.put(updated)
 
       return updated
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] })
       queryClient.invalidateQueries({ queryKey: ['tags'] })
+
+      // Background sync to remote
+      if (spreadsheetId) {
+        syncUpdateToRemote(updated, spreadsheetId)
+          .then(() => {
+            snapshotsRef.current.delete(updated.id)
+          })
+          .catch(async (err) => {
+            console.error('Remote sync failed for update:', err)
+            const snapshot = snapshotsRef.current.get(updated.id)
+            snapshotsRef.current.delete(updated.id)
+            if (snapshot) {
+              await db.notes.put(snapshot)
+            }
+            queryClient.invalidateQueries({ queryKey: ['notes'] })
+            queryClient.invalidateQueries({ queryKey: ['tags'] })
+            toast({
+              variant: 'destructive',
+              title: 'Sync failed',
+              description: 'Changes were not saved to Google Sheets and have been reverted.',
+            })
+          })
+      }
     },
     onError: (error: Error) => {
       let title = 'Failed to update note'
@@ -221,17 +247,6 @@ export function useNotes(options: UseNotesOptions = {}) {
       } else if (error.message.includes('Note not found')) {
         title = 'Note not found'
         description = 'The note may have been deleted'
-      } else if (error instanceof SheetsDbError) {
-        if (error.status === 404) {
-          title = 'Note not found'
-          description = 'The note may have been deleted from the sheet'
-        } else if (error.status === 401 || error.status === 403) {
-          title = 'Permission denied'
-          description = 'Check your Google Sheets permissions'
-        } else if (error.status >= 500) {
-          title = 'Server error'
-          description = 'Google Sheets API is experiencing issues'
-        }
       } else if (error.message.includes('Failed to fetch')) {
         title = 'Connection error'
         description = 'Check your internet connection'
@@ -243,7 +258,6 @@ export function useNotes(options: UseNotesOptions = {}) {
 
   const deleteNote = useMutation({
     mutationFn: async (id: string) => {
-      // Validate spreadsheetId
       if (!spreadsheetId) {
         throw new Error('No active source configured')
       }
@@ -252,29 +266,40 @@ export function useNotes(options: UseNotesOptions = {}) {
       if (!note) throw new Error('Note not found')
 
       const now = new Date().toISOString()
-      const deletedNote = { ...note, deletedAt: now, updatedAt: now }
+      const deletedNote: Note = { ...note, deletedAt: now, updatedAt: now }
 
-      // Write to remote FIRST (soft delete)
-      const notesSheet = getNotesSheet(spreadsheetId)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rows = (await notesSheet.getRows()) as any[]
-      const rowIndex = rows.findIndex((r) => r.id === id)
-
-      if (rowIndex < 0) {
-        throw new Error('Note not found in remote sheet')
-      }
-
-      // Soft delete via updateRow with deletedAt timestamp
-      // Row index + 2 because row 1 is headers and API rows are 0-indexed
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await notesSheet.updateRow(rowIndex + 2, deletedNote as any)
-
-      // Update local cache ONLY after remote success
+      // Store snapshot for rollback, then soft-delete in IndexedDB immediately
+      snapshotsRef.current.set(id, note)
       await db.notes.put(deletedNote)
+
+      return deletedNote
     },
-    onSuccess: () => {
+    onSuccess: (deletedNote) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] })
       queryClient.invalidateQueries({ queryKey: ['tags'] })
+
+      // Background sync to remote
+      if (spreadsheetId) {
+        syncDeleteToRemote(deletedNote, spreadsheetId)
+          .then(() => {
+            snapshotsRef.current.delete(deletedNote.id)
+          })
+          .catch(async (err) => {
+            console.error('Remote sync failed for delete:', err)
+            const snapshot = snapshotsRef.current.get(deletedNote.id)
+            snapshotsRef.current.delete(deletedNote.id)
+            if (snapshot) {
+              await db.notes.put(snapshot)
+            }
+            queryClient.invalidateQueries({ queryKey: ['notes'] })
+            queryClient.invalidateQueries({ queryKey: ['tags'] })
+            toast({
+              variant: 'destructive',
+              title: 'Sync failed',
+              description: 'Note was not deleted from Google Sheets and has been restored.',
+            })
+          })
+      }
     },
     onError: (error: Error) => {
       let title = 'Failed to delete note'
@@ -286,17 +311,6 @@ export function useNotes(options: UseNotesOptions = {}) {
       } else if (error.message.includes('Note not found')) {
         title = 'Note not found'
         description = 'The note may have already been deleted'
-      } else if (error instanceof SheetsDbError) {
-        if (error.status === 404) {
-          title = 'Note not found'
-          description = 'The note may have already been deleted from the sheet'
-        } else if (error.status === 401 || error.status === 403) {
-          title = 'Permission denied'
-          description = 'Check your Google Sheets permissions'
-        } else if (error.status >= 500) {
-          title = 'Server error'
-          description = 'Google Sheets API is experiencing issues'
-        }
       } else if (error.message.includes('Failed to fetch')) {
         title = 'Connection error'
         description = 'Check your internet connection'

@@ -14,7 +14,6 @@ import { SourceSelector } from '@/components/source-selector'
 import { ViewModeToggle } from '@/components/view-mode-toggle'
 import { KanbanBoardView } from '@/components/kanban-board-view'
 import { KanbanConfigDialog } from '@/components/kanban-config-dialog'
-import { useBlockingOverlay } from '@/components/blocking-overlay'
 import { useNotes } from '@/hooks/use-notes'
 import { useSettings } from '@/hooks/use-settings'
 import { useSources } from '@/hooks/use-sources'
@@ -36,7 +35,6 @@ export function HomePage() {
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
 
-  const { withOverlay } = useBlockingOverlay()
   const queryClient = useQueryClient()
   const { sources, activeSource, setActiveSourceId, addSource, updateSource, removeSource } = useSources()
   const {
@@ -295,7 +293,7 @@ export function HomePage() {
           onUpdateNote={(noteId, tags) => {
             const note = notes.find((n) => n.id === noteId)
             if (note) {
-              withOverlay(() => updateNote({ id: noteId, tags }), 'Updating note...')
+              updateNote({ id: noteId, tags })
             }
           }}
           onAddNote={(tag) => {
@@ -313,7 +311,7 @@ export function HomePage() {
           if (!open) setCreateNoteTags([])
         }}
         onSubmit={async (data) => {
-          await withOverlay(() => createNote(data), 'Creating note...')
+          await createNote(data)
         }}
         initialTags={createNoteTags}
         sourceId={activeSource?.id}
@@ -325,25 +323,19 @@ export function HomePage() {
         open={isModalOpen}
         onOpenChange={handleCloseModal}
         isGeneratingAI={isGeneratingAI}
-        onUpdate={(data) => {
+        onUpdate={async (data) => {
           if (selectedNote) {
-            return withOverlay(async () => {
-              const updated = await updateNote({ id: selectedNote.id, ...data })
-              if (updated) {
-                setSelectedNote(updated)
-              }
-            }, 'Updating note...')
+            const updated = await updateNote({ id: selectedNote.id, ...data })
+            if (updated) {
+              setSelectedNote(updated)
+            }
           }
-          return Promise.resolve()
         }}
-        onDelete={() => {
+        onDelete={async () => {
           if (selectedNote) {
-            return withOverlay(async () => {
-              await deleteNote(selectedNote.id)
-              handleCloseModal()
-            }, 'Deleting note...')
+            await deleteNote(selectedNote.id)
+            handleCloseModal()
           }
-          return Promise.resolve()
         }}
       />
 
