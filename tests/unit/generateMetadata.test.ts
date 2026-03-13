@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  generateMetadata,
-  shouldGenerateTitle,
-  shouldGenerateTags,
-} from '@/services/claude/generateMetadata'
+import { generateMetadata } from '@/services/claude/generateMetadata'
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -18,18 +14,18 @@ describe('generateMetadata', () => {
   })
 
   it('should return null when content is empty', async () => {
-    const result = await generateMetadata('')
+    const result = await generateMetadata({ content: '' })
     expect(result).toBeNull()
   })
 
   it('should return null when content is whitespace only', async () => {
-    const result = await generateMetadata('   \n  ')
+    const result = await generateMetadata({ content: '   \n  ' })
     expect(result).toBeNull()
   })
 
   it('should return null when API key is not configured', async () => {
     vi.stubEnv('VITE_ANTHROPIC_API_KEY', '')
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toBeNull()
   })
 
@@ -53,7 +49,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    await generateMetadata('This is a test note')
+    await generateMetadata({ content: 'This is a test note' })
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages',
@@ -89,7 +85,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    await generateMetadata('This is a test note')
+    await generateMetadata({ content: 'This is a test note' })
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages',
@@ -119,7 +115,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    await generateMetadata('This is a test note about programming')
+    await generateMetadata({ content: 'This is a test note about programming' })
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://proxy-g56q77hy2a-uc.a.run.app/api.anthropic.com/v1/messages',
@@ -152,7 +148,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('This is a test note about programming')
+    const result = await generateMetadata({ content: 'This is a test note about programming' })
 
     expect(result).toEqual({
       title: 'Programming Notes',
@@ -167,7 +163,7 @@ describe('generateMetadata', () => {
       statusText: 'Internal Server Error',
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toBeNull()
   })
 
@@ -181,7 +177,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toBeNull()
   })
 
@@ -200,7 +196,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toBeNull()
   })
 
@@ -222,7 +218,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toBeNull()
   })
 
@@ -231,7 +227,7 @@ describe('generateMetadata', () => {
       new Error('Network error')
     )
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toBeNull()
   })
 
@@ -250,7 +246,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toEqual({
       title: 'Test Title',
       tags: ['tag1', 'tag2'],
@@ -272,7 +268,7 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toEqual({
       title: 'Test Title',
       tags: ['tag1'],
@@ -294,50 +290,46 @@ describe('generateMetadata', () => {
       json: async () => mockResponse,
     })
 
-    const result = await generateMetadata('Some content')
+    const result = await generateMetadata({ content: 'Some content' })
     expect(result).toEqual({
       title: 'Whitespace Test',
       tags: ['ws'],
     })
   })
-})
 
-describe('shouldGenerateTitle', () => {
-  it('should return true when title is undefined', () => {
-    expect(shouldGenerateTitle(undefined)).toBe(true)
-  })
+  it('should include existing title and tags in prompt context', async () => {
+    const mockResponse = {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify({
+            title: 'Improved Title',
+            tags: ['existing-tag', 'new-tag'],
+          }),
+        },
+      ],
+    }
 
-  it('should return true when title is empty string', () => {
-    expect(shouldGenerateTitle('')).toBe(true)
-  })
+    ;(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockResponse,
+    })
 
-  it('should return true when title is whitespace only', () => {
-    expect(shouldGenerateTitle('   ')).toBe(true)
-    expect(shouldGenerateTitle('\n\t  ')).toBe(true)
-  })
+    const result = await generateMetadata({
+      content: 'Some content',
+      existingTitle: 'My Title',
+      existingTags: ['existing-tag'],
+    })
 
-  it('should return false when title has content', () => {
-    expect(shouldGenerateTitle('My Title')).toBe(false)
-    expect(shouldGenerateTitle('A')).toBe(false)
-  })
-})
+    expect(result).toEqual({
+      title: 'Improved Title',
+      tags: ['existing-tag', 'new-tag'],
+    })
 
-describe('shouldGenerateTags', () => {
-  it('should return true when tags is undefined', () => {
-    expect(shouldGenerateTags(undefined)).toBe(true)
-  })
-
-  it('should return true when tags is empty string', () => {
-    expect(shouldGenerateTags('')).toBe(true)
-  })
-
-  it('should return true when tags is whitespace only', () => {
-    expect(shouldGenerateTags('   ')).toBe(true)
-    expect(shouldGenerateTags('\n\t  ')).toBe(true)
-  })
-
-  it('should return false when tags has content', () => {
-    expect(shouldGenerateTags('tag1, tag2')).toBe(false)
-    expect(shouldGenerateTags('tag')).toBe(false)
+    // Verify the prompt includes existing metadata
+    const callBody = JSON.parse((global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body)
+    const prompt = callBody.messages[0].content
+    expect(prompt).toContain('My Title')
+    expect(prompt).toContain('existing-tag')
   })
 })

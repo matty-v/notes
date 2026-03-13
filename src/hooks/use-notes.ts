@@ -9,17 +9,11 @@ import {
   syncDeleteToRemote,
 } from '@/lib/sync-remote'
 import type { Note, SortOrder } from '@/lib/types'
-import {
-  generateMetadata,
-  shouldGenerateTitle,
-  shouldGenerateTags,
-} from '@/services/claude/generateMetadata'
 
 interface CreateNoteInput {
   title: string
   content: string
   tags: string
-  skipAutoGeneration?: boolean
 }
 
 interface UseNotesOptions {
@@ -28,12 +22,11 @@ interface UseNotesOptions {
   sortOrder?: SortOrder
   sourceId?: string
   spreadsheetId?: string
-  onGeneratingMetadata?: (isGenerating: boolean) => void
 }
 
 export function useNotes(options: UseNotesOptions = {}) {
   const queryClient = useQueryClient()
-  const { search = '', tagFilter = [], sortOrder = 'newest', sourceId, spreadsheetId, onGeneratingMetadata } = options
+  const { search = '', tagFilter = [], sortOrder = 'newest', sourceId, spreadsheetId } = options
 
   // Snapshot storage for rollback on remote sync failure
   const snapshotsRef = useRef(new Map<string, Note | null>())
@@ -83,34 +76,13 @@ export function useNotes(options: UseNotesOptions = {}) {
         throw new Error('No active source configured')
       }
 
-      let title = input.title
-      let tags = input.tags
-
-      // Auto-generate title and/or tags if empty (still awaits Claude API)
-      if (!input.skipAutoGeneration && (shouldGenerateTitle(title) || shouldGenerateTags(tags))) {
-        onGeneratingMetadata?.(true)
-        try {
-          const generated = await generateMetadata(input.content)
-          if (generated) {
-            if (shouldGenerateTitle(title)) {
-              title = generated.title
-            }
-            if (shouldGenerateTags(tags)) {
-              tags = generated.tags.join(', ')
-            }
-          }
-        } finally {
-          onGeneratingMetadata?.(false)
-        }
-      }
-
       const now = new Date().toISOString()
       const note: Note = {
         id: uuid(),
         sourceId: sourceId || '',
-        title,
+        title: input.title,
         content: input.content,
-        tags,
+        tags: input.tags,
         createdAt: now,
         updatedAt: now,
       }
@@ -173,33 +145,9 @@ export function useNotes(options: UseNotesOptions = {}) {
       const existing = await db.notes.get(id)
       if (!existing) throw new Error('Note not found')
 
-      let title = updates.title !== undefined ? updates.title : existing.title
-      let tags = updates.tags !== undefined ? updates.tags : existing.tags
-      const content = updates.content !== undefined ? updates.content : existing.content
-
-      // Auto-generate title and/or tags if empty
-      if (shouldGenerateTitle(title) || shouldGenerateTags(tags)) {
-        onGeneratingMetadata?.(true)
-        try {
-          const generated = await generateMetadata(content)
-          if (generated) {
-            if (shouldGenerateTitle(title)) {
-              title = generated.title
-            }
-            if (shouldGenerateTags(tags)) {
-              tags = generated.tags.join(', ')
-            }
-          }
-        } finally {
-          onGeneratingMetadata?.(false)
-        }
-      }
-
       const updated: Note = {
         ...existing,
         ...updates,
-        title,
-        tags,
         sourceId: existing.sourceId,
         updatedAt: new Date().toISOString(),
       }
