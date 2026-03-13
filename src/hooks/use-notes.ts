@@ -55,7 +55,7 @@ export function useNotes(options: UseNotesOptions = {}) {
 
       if (tagFilter.length > 0) {
         results = results.filter((n) => {
-          const noteTags = n.tags.split(',').map((t) => t.trim()).filter(Boolean)
+          const noteTags = (n.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
           return tagFilter.some((tag) => noteTags.includes(tag))
         })
       }
