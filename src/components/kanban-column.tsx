@@ -12,10 +12,11 @@ interface KanbanColumnProps {
   onNoteClick: (note: Note) => void
   onAddNote?: () => void
   isDefaultColumn?: boolean
+  isOver?: boolean
 }
 
-export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNote, isDefaultColumn = false }: KanbanColumnProps) {
-  const { setNodeRef, isOver } = useDroppable({
+export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNote, isDefaultColumn = false, isOver = false }: KanbanColumnProps) {
+  const { setNodeRef } = useDroppable({
     id: id,
   })
 
@@ -28,12 +29,11 @@ export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNo
         isOver ? 'bg-[rgba(0,212,255,0.05)] ring-2 ring-[rgba(0,212,255,0.3)] rounded-lg' : ''
       }`}
     >
-      {/* Column Header - Drop Zone */}
+      {/* Column Header */}
       <div
         className="sticky top-0 z-10 px-4 py-3 mb-3 rounded-lg bg-[rgba(18,24,33,0.8)] backdrop-blur-[10px] border border-[rgba(100,150,255,0.2)] shadow-[0_0_20px_rgba(0,212,255,0.05)]"
-        style={{ pointerEvents: 'none' }}
       >
-        <div className="flex items-center justify-between" style={{ pointerEvents: 'auto' }}>
+        <div className="flex items-center justify-between">
           <h3 className="font-medium text-foreground text-sm">
             {title}
           </h3>
@@ -53,7 +53,7 @@ export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNo
           </div>
         </div>
         {isDefaultColumn && (
-          <p className="mt-1 text-xs text-muted-foreground" style={{ pointerEvents: 'auto' }}>
+          <p className="mt-1 text-xs text-muted-foreground">
             Notes without configured tags
           </p>
         )}
@@ -68,7 +68,7 @@ export function KanbanColumn({ id, title, tag: _tag, notes, onNoteClick, onAddNo
             </p>
           </div>
         ) : (
-          <SortableContext items={noteIds} strategy={verticalListSortingStrategy}>
+          <SortableContext id={id} items={noteIds} strategy={verticalListSortingStrategy}>
             {notes.map((note) => (
               <KanbanNoteCard
                 key={note.id}
