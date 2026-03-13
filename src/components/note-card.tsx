@@ -5,9 +5,10 @@ interface NoteCardProps {
   note: Note
   onOpenModal: () => void
   variant?: 'list' | 'grid'
+  onTagClick?: (tag: string) => void
 }
 
-export function NoteCard({ note, onOpenModal, variant = 'list' }: NoteCardProps) {
+export function NoteCard({ note, onOpenModal, variant = 'list', onTagClick }: NoteCardProps) {
   const tags = (note.tags || '').split(',').map((t) => t.trim()).filter(Boolean)
   const date = note.createdAt
     ? new Date(note.createdAt).toLocaleDateString('en-US', {
@@ -38,14 +39,28 @@ export function NoteCard({ note, onOpenModal, variant = 'list' }: NoteCardProps)
       )}
       {tags.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-0.5 text-xs rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)]"
-            >
-              {tag}
-            </span>
-          ))}
+          {tags.map((tag) =>
+            onTagClick ? (
+              <button
+                key={tag}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onTagClick(tag)
+                }}
+                className="px-2 py-0.5 text-xs rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)] hover:bg-[rgba(0,212,255,0.2)] hover:border-[var(--accent-cyan)] transition-colors"
+              >
+                {tag}
+              </button>
+            ) : (
+              <span
+                key={tag}
+                className="px-2 py-0.5 text-xs rounded-md bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)] text-[var(--accent-cyan)]"
+              >
+                {tag}
+              </span>
+            )
+          )}
         </div>
       )}
     </div>

@@ -9,6 +9,12 @@ interface GeneratedMetadata {
   tags: string[]
 }
 
+interface GenerateMetadataInput {
+  content: string
+  existingTitle?: string
+  existingTags?: string[]
+}
+
 interface ClaudeMessage {
   role: 'user' | 'assistant'
   content: string
@@ -23,12 +29,14 @@ interface ClaudeResponse {
 
 /**
  * Generates title and tags for a note based on its content
- * @param content The note content to analyze
+ * @param input The note content and optional existing metadata to build upon
  * @returns Generated title and tags, or null if generation fails
  */
 export async function generateMetadata(
-  content: string
+  input: GenerateMetadataInput
 ): Promise<GeneratedMetadata | null> {
+  const { content, existingTitle, existingTags } = input
+
   // Don't attempt generation if content is empty
   if (!content || content.trim().length === 0) {
     return null
@@ -45,27 +53,55 @@ export async function generateMetadata(
     return null
   }
 
+  const hasExistingTitle = existingTitle && existingTitle.trim().length > 0
+  const hasExistingTags = existingTags && existingTags.length > 0
+
+  let contextBlock = ''
+  if (hasExistingTitle || hasExistingTags) {
+    contextBlock = '\nExisting metadata:\n'
+    if (hasExistingTitle) {
+      contextBlock += `- Current title: "${existingTitle}"\n`
+    }
+    if (hasExistingTags) {
+      contextBlock += `- Current tags: ${existingTags.join(', ')}\n`
+    }
+    contextBlock += '\n'
+  }
+
+  let guidelines = `Guidelines:
+- Title should capture the main topic or purpose (max 60 characters)`
+
+  if (hasExistingTitle) {
+    guidelines += `\n- Consider the existing title and suggest an improved or alternative one`
+  }
+
+  if (hasExistingTags) {
+    guidelines += `\n- Keep the existing tags and suggest additional relevant ones`
+  }
+
+  guidelines += `
+- Tags should be single words or short phrases (lowercase, no spaces)
+- Tags should represent themes, topics, or key concepts
+- For very short notes (< 50 chars), use the content itself as inspiration for the title
+- Keep it simple and focused
+- Return 2-5 total tags`
+
   try {
     const messages: ClaudeMessage[] = [
       {
         role: 'user',
-        content: `Analyze the following note content and generate a concise title and 2-5 relevant tags.
-
+        content: `Analyze the following note content and generate a concise title and relevant tags.
+${contextBlock}
 Note content:
 ${content}
 
 Respond with a JSON object in this exact format:
 {
-  "title": "A concise, descriptive title (max 60 characters)",
+  "title": "A concise, descriptive title",
   "tags": ["tag1", "tag2", "tag3"]
 }
 
-Guidelines:
-- Title should capture the main topic or purpose
-- Tags should be single words or short phrases (lowercase, no spaces)
-- Tags should represent themes, topics, or key concepts
-- For very short notes (< 50 chars), use the content itself as inspiration for the title
-- Keep it simple and focused
+${guidelines}
 
 Respond ONLY with the JSON object, no other text.`,
       },
@@ -121,22 +157,4 @@ Respond ONLY with the JSON object, no other text.`,
     console.error('Error generating metadata with Claude:', error)
     return null
   }
-}
-
-/**
- * Checks if a title should be auto-generated
- * @param title The current title value
- * @returns true if title is empty or whitespace-only
- */
-export function shouldGenerateTitle(title: string | undefined): boolean {
-  return !title || title.trim() === ''
-}
-
-/**
- * Checks if tags should be auto-generated
- * @param tags The current tags value (comma-separated string)
- * @returns true if tags are empty
- */
-export function shouldGenerateTags(tags: string | undefined): boolean {
-  return !tags || tags.trim() === ''
 }

@@ -13,11 +13,10 @@ interface NoteModalProps {
   onOpenChange: (open: boolean) => void
   onUpdate: (data: { title: string; content: string; tags: string }) => Promise<unknown>
   onDelete: () => Promise<unknown>
-  isGeneratingAI?: boolean
 }
 
 
-export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGeneratingAI }: NoteModalProps) {
+export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete }: NoteModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -81,7 +80,6 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
                 }}
                 onSubmit={handleUpdate}
                 submitLabel="Update"
-                isGeneratingAI={isGeneratingAI}
               />
             </div>
             <DialogFooter className="flex !flex-row items-center justify-end gap-2 pt-4">
@@ -102,7 +100,7 @@ export function NoteModal({ note, open, onOpenChange, onUpdate, onDelete, isGene
                 {isUpdating ? (
                   <>
                     <Spinner size="sm" className="mr-1.5" />
-                    {isGeneratingAI ? 'Generating...' : 'Updating...'}
+                    Updating...
                   </>
                 ) : (
                   <>

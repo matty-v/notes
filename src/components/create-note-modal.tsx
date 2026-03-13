@@ -10,13 +10,12 @@ import { useTemplates } from '@/hooks/use-templates'
 interface CreateNoteModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSubmit: (data: { title: string; content: string; tags: string; skipAutoGeneration?: boolean }) => Promise<unknown>
+  onSubmit: (data: { title: string; content: string; tags: string }) => Promise<unknown>
   initialTags?: string[]
   sourceId?: string
-  isGeneratingAI?: boolean
 }
 
-export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId, isGeneratingAI }: CreateNoteModalProps) {
+export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sourceId }: CreateNoteModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState('blank')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { templates } = useTemplates(sourceId)
@@ -54,10 +53,7 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
   const handleSubmit = async (data: { title: string; content: string; tags: string }) => {
     setIsSubmitting(true)
     try {
-      await onSubmit({
-        ...data,
-        skipAutoGeneration: selectedTemplateId !== 'blank' && selectedTemplateId !== '',
-      })
+      await onSubmit(data)
       onOpenChange(false)
     } finally {
       setIsSubmitting(false)
@@ -78,7 +74,6 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
             onSubmit={handleSubmit}
             submitLabel="Create"
             initialValues={templateFormValues}
-            isGeneratingAI={isGeneratingAI}
           />
         </div>
         <DialogFooter className="pt-4">
@@ -99,7 +94,7 @@ export function CreateNoteModal({ open, onOpenChange, onSubmit, initialTags, sou
               {isSubmitting ? (
                 <>
                   <Spinner size="sm" className="mr-1.5" />
-                  {isGeneratingAI ? 'Generating...' : 'Creating...'}
+                  Creating...
                 </>
               ) : (
                 <>

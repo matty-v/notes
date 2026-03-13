@@ -32,7 +32,6 @@ export function HomePage() {
   const [createNoteTags, setCreateNoteTags] = useState<string[]>([])
   const [isKanbanConfigOpen, setIsKanbanConfigOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   const queryClient = useQueryClient()
@@ -54,7 +53,6 @@ export function HomePage() {
     sortOrder: 'newest',
     sourceId: activeSource?.id,
     spreadsheetId: activeSource?.spreadsheetId,
-    onGeneratingMetadata: setIsGeneratingAI,
   })
 
   // Show migration warning if present
@@ -141,6 +139,12 @@ export function HomePage() {
       })
     } finally {
       setIsRefreshing(false)
+    }
+  }
+
+  const handleTagClick = (tag: string) => {
+    if (!tagFilter.includes(tag)) {
+      setTagFilter([...tagFilter, tag])
     }
   }
 
@@ -246,6 +250,7 @@ export function HomePage() {
                     <NoteCard
                       note={notes[virtualRow.index]}
                       onOpenModal={() => handleOpenModal(notes[virtualRow.index])}
+                      onTagClick={handleTagClick}
                     />
                   </div>
                 </div>
@@ -275,6 +280,7 @@ export function HomePage() {
                   note={note}
                   variant="grid"
                   onOpenModal={() => handleOpenModal(note)}
+                  onTagClick={handleTagClick}
                 />
               ))}
             </div>
@@ -311,14 +317,12 @@ export function HomePage() {
         }}
         initialTags={createNoteTags}
         sourceId={activeSource?.id}
-        isGeneratingAI={isGeneratingAI}
       />
 
       <NoteModal
         note={selectedNote}
         open={isModalOpen}
         onOpenChange={handleCloseModal}
-        isGeneratingAI={isGeneratingAI}
         onUpdate={async (data) => {
           if (selectedNote) {
             const updated = await updateNote({ id: selectedNote.id, ...data })
