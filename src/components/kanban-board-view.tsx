@@ -1,5 +1,16 @@
-import { useMemo, useState } from 'react'
-import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+} from '@dnd-kit/core'
 import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { KanbanColumn } from '@/components/kanban-column'
@@ -62,6 +73,7 @@ function organizeNotesIntoColumns(
 
 export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUpdateNote, onAddNote, isLoading = false }: KanbanBoardViewProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [overColumnId, setOverColumnId] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -76,11 +88,53 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     [notes, config]
   )
 
+  // Set of all column IDs for quick lookup
+  const columnIds = useMemo(() => {
+    const ids = new Set<string>(config.columns.map(col => col.id))
+    if (config.defaultColumn.visible) ids.add('__default__')
+    return ids
+  }, [config])
+
+  // Custom collision detection: prefer column droppables over note sortables
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const collisions = pointerWithin(args)
+    // Prefer column-level collisions over note-level ones
+    const columnCollision = collisions.find(c => columnIds.has(c.id as string))
+    return columnCollision ? [columnCollision] : collisions
+  }, [columnIds])
+
   const draggedNote = activeId ? notes.find(n => n.id === activeId) : null
+
+  // Resolve the column ID from any droppable (column or note inside column)
+  const resolveColumnId = useCallback((droppableId: string | number, data?: Record<string, unknown>): string | undefined => {
+    const id = String(droppableId)
+    if (columnIds.has(id)) return id
+    // It's a note ID — check sortable containerId, then search
+    const containerId = (data as { sortable?: { containerId?: string } })?.sortable?.containerId
+    if (containerId && columnIds.has(containerId)) return containerId
+    for (const [colId, colNotes] of organizedNotes.entries()) {
+      if (colNotes.some(n => n.id === id)) return colId
+    }
+    return undefined
+  }, [columnIds, organizedNotes])
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string)
+  }
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { over } = event
+    if (!over) {
+      setOverColumnId(null)
+      return
+    }
+    setOverColumnId(resolveColumnId(over.id, over.data.current) ?? null)
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveId(null)
+    setOverColumnId(null)
 
     if (!over || active.id === over.id) return
 
@@ -88,32 +142,7 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
     const note = notes.find((n) => n.id === active.id)
     if (!note) return
 
-    // Determine the target column ID
-    let targetColumnId: string | undefined
-
-    // Check if over.id is a column ID (either a configured column or the default column)
-    const isColumnId =
-      over.id === '__default__' ||
-      config.columns.some(col => col.id === over.id)
-
-    if (isColumnId) {
-      targetColumnId = over.id as string
-    } else {
-      // over.id is likely a note ID - find which column contains it
-      // First check if dnd-kit provides the container ID
-      targetColumnId = over.data.current?.sortable?.containerId as string | undefined
-
-      // Fallback: search through organized notes to find the column
-      if (!targetColumnId) {
-        for (const [columnId, columnNotes] of organizedNotes.entries()) {
-          if (columnNotes.some(n => n.id === over.id)) {
-            targetColumnId = columnId
-            break
-          }
-        }
-      }
-    }
-
+    const targetColumnId = resolveColumnId(over.id, over.data.current)
     if (!targetColumnId) return
 
     // Get current note tags
@@ -217,7 +246,7 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
   }
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex gap-4 h-full p-2">
           {columnsToRender.map((column) => (
@@ -230,12 +259,17 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
               onNoteClick={onNoteClick}
               onAddNote={column.isDefault ? () => {} : () => onAddNote(column.tag || '')}
               isDefaultColumn={column.isDefault}
+              isOver={overColumnId === column.id}
             />
           ))}
         </div>
       </div>
-      <DragOverlay>
-        {activeId && draggedNote ? <KanbanNoteCard note={draggedNote} onOpenModal={() => {}} /> : null}
+      <DragOverlay dropAnimation={null}>
+        {activeId && draggedNote ? (
+          <div className="w-[296px] opacity-80 rotate-[2deg] ring-2 ring-[rgba(0,212,255,0.5)] rounded-lg shadow-[0_0_24px_rgba(0,212,255,0.2)]">
+            <KanbanNoteCard note={draggedNote} onOpenModal={() => {}} />
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   )
