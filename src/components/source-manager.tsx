@@ -4,16 +4,8 @@ import { Spinner } from '@/components/ui/spinner'
 import type { NoteSource } from '@/lib/types'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
 import { exportNotesForSource } from '@/lib/csv-export'
+import { extractSpreadsheetId } from '@/lib/spreadsheet-id'
 import { toast } from '@/hooks/use-toast'
-
-// If the input looks like a Google Sheets URL, pull just the spreadsheet id
-// out of the `/spreadsheets/d/<id>/...` segment. Otherwise return the input
-// unchanged so users who paste a bare id continue to work.
-const SHEETS_URL_RE = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/
-function extractSpreadsheetId(input: string): string {
-  const match = input.match(SHEETS_URL_RE)
-  return match ? match[1] : input
-}
 
 interface SourceManagerProps {
   sources: NoteSource[]

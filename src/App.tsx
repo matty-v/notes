@@ -9,6 +9,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { useSources } from '@/hooks/use-sources'
 import { useSettings } from '@/hooks/use-settings'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
+import { extractSpreadsheetId } from '@/lib/spreadsheet-id'
 
 document.documentElement.classList.add('dark')
 
@@ -27,9 +28,13 @@ function AppContent() {
   const [inputValue, setInputValue] = useState('')
 
   const handleConnect = async () => {
-    const success = await initializeSheets(inputValue)
+    // Strip a pasted Sheets URL down to the bare spreadsheet id so the
+    // downstream calls don't store the URL itself as the id and silently
+    // fail every subsequent API request.
+    const spreadsheetId = extractSpreadsheetId(inputValue)
+    const success = await initializeSheets(spreadsheetId)
     if (success) {
-      const source = addSource('Primary Notes', inputValue)
+      const source = addSource('Primary Notes', spreadsheetId)
       setActiveSourceId(source.id)
     }
   }
