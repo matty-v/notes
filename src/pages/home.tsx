@@ -112,14 +112,30 @@ export function HomePage() {
     setTagFilter([])  // Reset tag filter when changing source
   }
 
+  // Pending close-animation timeout used to clear `selectedNote` after the
+  // dialog animation finishes. Tracked in a ref so opening a new note in the
+  // 200ms window cancels the trailing clear and we don't clobber the new
+  // selection mid-animation.
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleOpenModal = (note: Note) => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
     setSelectedNote(note)
     setIsModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setIsModalOpen(false)
-    setTimeout(() => setSelectedNote(null), 200) // Clear after animation
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setSelectedNote(null)
+      closeTimeoutRef.current = null
+    }, 200)
   }
 
   const handleRefresh = async () => {
