@@ -46,6 +46,21 @@ export function populateFromRows(
   })
 }
 
+/**
+ * Adjust cached row indices after a hard row deletion in the given spreadsheet.
+ * Every entry whose rowIndex is greater than the deleted index is decremented
+ * by one to reflect the rows shifting up. The deleted note's own entry must be
+ * removed separately via deleteRowIndex.
+ */
+export function shiftAfterDelete(spreadsheetId: string, deletedRowIndex: number): void {
+  const prefix = `${spreadsheetId}:`
+  for (const [key, idx] of cache.entries()) {
+    if (key.startsWith(prefix) && idx > deletedRowIndex) {
+      cache.set(key, idx - 1)
+    }
+  }
+}
+
 export function clearRowIndexCache(): void {
   cache.clear()
 }

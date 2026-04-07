@@ -77,18 +77,29 @@ describe('useNotes', () => {
     expect(result.current.notes[0].title).toBe('Test Note')
   })
 
-  it('should soft delete a note via remote API first', async () => {
+  it('should hard delete a note via remote deleteRow and locally tombstone', async () => {
+    // The remote sheets-db-api updateRow silently drops fields that don't
+    // match an existing column header — including `deletedAt` when the sheet
+    // was provisioned without that column. So syncDeleteToRemote uses
+    // deleteRow() to physically remove the row instead of trying to write
+    // a soft-delete marker that the API would discard.
+    //
+    // Locally, the note still gets a deletedAt timestamp so the optimistic
+    // update + rollback machinery in useNotes can restore it on sync failure.
+
     const { getNotesSheet } = await import('@/lib/notes-api')
-    const mockUpdateRow = vi.fn(async (_rowIndex, data) => data)
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const mockUpdateRow = vi.fn(async (_rowIndex: number, data: any) => data)
+    const mockDeleteRow = vi.fn(async (_rowIndex: number) => undefined)
     const mockGetRows = vi.fn()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(getNotesSheet).mockReturnValue({
       createRow: vi.fn(async (data: any) => ({ rowIndex: 2, data })),
       updateRow: mockUpdateRow,
       getRows: mockGetRows,
-      deleteRow: vi.fn(),
+      deleteRow: mockDeleteRow,
     })
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     const { result } = renderHook(() => useNotes({ spreadsheetId: 'test-sheet-id' }), {
       wrapper: createWrapper(),
@@ -98,7 +109,7 @@ describe('useNotes', () => {
     await act(async () => {
       await result.current.createNote({
         title: 'To Delete',
-        content: 'Will be soft deleted',
+        content: 'Will be deleted',
         tags: '',
       })
     })
@@ -106,25 +117,22 @@ describe('useNotes', () => {
     await waitFor(() => expect(result.current.notes).toHaveLength(1))
     const noteId = result.current.notes[0].id
 
-    // Mock getRows to return the note for the delete operation
-    mockGetRows.mockResolvedValueOnce([{ id: noteId, title: 'To Delete' }])
-
     // Delete the note
     await act(async () => {
       await result.current.deleteNote(noteId)
     })
 
-    // Verify remote API was called with deletedAt
-    expect(mockUpdateRow).toHaveBeenCalledOnce()
-    expect(mockUpdateRow.mock.calls[0][1]).toMatchObject({
-      id: noteId,
-      deletedAt: expect.any(String),
-    })
+    // Verify remote deleteRow was called (and updateRow was NOT)
+    expect(mockDeleteRow).toHaveBeenCalledOnce()
+    expect(mockUpdateRow).not.toHaveBeenCalled()
+    // deleteRow takes a row index — should be the cached one from create (2)
+    expect(mockDeleteRow.mock.calls[0][0]).toBe(2)
 
     // Note should not appear in the list
     await waitFor(() => expect(result.current.notes).toHaveLength(0))
 
-    // But note should still exist in DB with deletedAt set
+    // But note should still exist in DB with deletedAt set (local tombstone
+    // for rollback support — cleared on next refreshCacheFromRemote)
     const dbNote = await db.notes.get(noteId)
     expect(dbNote).toBeDefined()
     expect(dbNote?.deletedAt).toBeDefined()
