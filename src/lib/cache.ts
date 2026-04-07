@@ -22,7 +22,7 @@ export async function refreshCacheFromRemote(
   const remoteNotes = (await notesSheet.getRows()) as any[]
 
   // Populate row index cache (rows are 0-indexed, row 1 is headers)
-  populateFromRows(remoteNotes)
+  populateFromRows(spreadsheetId, remoteNotes)
 
   // Clear existing notes for this source
   await db.notes.where('sourceId').equals(sourceId).delete()

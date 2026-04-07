@@ -9,7 +9,7 @@ async function resolveRowIndex(
   noteId: string,
   spreadsheetId: string
 ): Promise<number> {
-  const cached = getRowIndex(noteId)
+  const cached = getRowIndex(spreadsheetId, noteId)
   if (cached !== undefined) return cached
 
   const notesSheet = getNotesSheet(spreadsheetId)
@@ -20,7 +20,7 @@ async function resolveRowIndex(
     throw new Error('Note not found in remote sheet')
   }
   const rowIndex = index + 2
-  setRowIndex(noteId, rowIndex)
+  setRowIndex(spreadsheetId, noteId, rowIndex)
   return rowIndex
 }
 
@@ -35,7 +35,7 @@ export async function syncCreateToRemote(
   const notesSheet = getNotesSheet(spreadsheetId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = await notesSheet.createRow(note as any)
-  setRowIndex(note.id, result.rowIndex)
+  setRowIndex(spreadsheetId, note.id, result.rowIndex)
   return { rowIndex: result.rowIndex }
 }
 
@@ -63,5 +63,5 @@ export async function syncDeleteToRemote(
   const notesSheet = getNotesSheet(spreadsheetId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await notesSheet.updateRow(rowIndex, deletedNote as any)
-  deleteRowIndex(deletedNote.id)
+  deleteRowIndex(spreadsheetId, deletedNote.id)
 }
