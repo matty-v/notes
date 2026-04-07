@@ -168,7 +168,10 @@ export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUp
       newTags = [...nonColumnTags, targetColumn.tag]
     }
 
-    // Update the note with new tags
+    // Update the note with new tags. Use `", "` (with space) as the canonical
+    // joiner — same as note-form — so the on-disk representation is
+    // consistent regardless of which path wrote the row, and the value is
+    // human-readable when viewing the sheet directly.
     const newTagsString = newTags.join(', ')
     onUpdateNote(note.id, newTagsString)
   }

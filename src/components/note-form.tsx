@@ -99,7 +99,9 @@ export function NoteForm({
       await onSubmit({
         title: title.trim(),
         content: content.trim(),
-        tags: finalTags.join(','),
+        // Canonical join format: `", "` with space for sheet readability.
+        // kanban-board-view writes the same format on drag-update.
+        tags: finalTags.join(', '),
       })
       if (!initialValues) {
         setTitle('')
