@@ -27,9 +27,12 @@ export async function refreshCacheFromRemote(
   // Clear existing notes for this source
   await db.notes.where('sourceId').equals(sourceId).delete()
 
-  // Write fresh data to cache
+  // Write fresh data to cache. Skip soft-deleted notes — they exist on the
+  // remote sheet for tombstoning but should not appear in the local cache,
+  // matching resetCacheForSource behavior. The use-notes queryFn already
+  // filters deletedAt at read time, so writing them here was pure waste.
   for (const remote of remoteNotes) {
-    if (!remote.id) continue
+    if (!remote.id || remote.deletedAt) continue
 
     const note: Note = {
       ...remote,
