@@ -33,7 +33,7 @@ export function NoteForm({
   const pendingTagRef = useRef('')
 
   const { isListening, transcript, error: voiceError, isSupported, startListening, stopListening, resetTranscript } = useVoiceRecording()
-  const { suggest, suggestion, isLoading: isSuggesting, clear: clearSuggestions } = useAISuggestions()
+  const { suggest, suggestion, isLoading: isSuggesting, error: suggestError, clear: clearSuggestions } = useAISuggestions()
 
   useEffect(() => {
     if (transcript) {
@@ -161,6 +161,7 @@ export function NoteForm({
       <AISuggestionPanel
         suggestion={suggestion}
         isLoading={isSuggesting}
+        error={suggestError}
         currentTitle={title}
         currentTags={tags}
         onAcceptTitle={handleAcceptTitle}

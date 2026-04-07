@@ -1,10 +1,11 @@
-import { Check, X, Plus } from 'lucide-react'
+import { Check, X, Plus, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 
 interface AISuggestionPanelProps {
   suggestion: { title: string; tags: string[] } | null
   isLoading: boolean
+  error?: string | null
   currentTitle: string
   currentTags: string[]
   onAcceptTitle: (title: string) => void
@@ -16,6 +17,7 @@ interface AISuggestionPanelProps {
 export function AISuggestionPanel({
   suggestion,
   isLoading,
+  error,
   currentTitle,
   currentTags,
   onAcceptTitle,
@@ -23,7 +25,19 @@ export function AISuggestionPanel({
   onAcceptAllTags,
   onDismiss,
 }: AISuggestionPanelProps) {
-  if (!isLoading && !suggestion) return null
+  if (!isLoading && !suggestion && !error) return null
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-[rgba(255,100,150,0.3)] bg-[rgba(255,100,150,0.05)] p-3 flex items-start gap-2">
+        <AlertCircle className="h-4 w-4 text-[var(--accent-pink)] mt-0.5 flex-shrink-0" />
+        <span className="text-sm text-[var(--accent-pink)] flex-1">{error}</span>
+        <Button type="button" variant="ghost" size="sm" onClick={onDismiss} className="h-6 w-6 p-0 flex-shrink-0">
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
