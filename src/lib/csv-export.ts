@@ -1,10 +1,19 @@
 import { db } from '@/lib/db'
 
+// Characters that trigger formula execution in Excel/Google Sheets when leading
+// a CSV cell. Prefixing with a single quote neutralizes them. See CWE-1236.
+const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r']
+
 function escapeCsvValue(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
-    return `"${value.replace(/"/g, '""')}"`
+  // Defend against CSV formula injection by prefixing risky leading chars with `'`.
+  let safe = value
+  if (safe.length > 0 && FORMULA_TRIGGERS.includes(safe[0])) {
+    safe = `'${safe}`
   }
-  return value
+  if (safe.includes(',') || safe.includes('"') || safe.includes('\n') || safe.includes('\r')) {
+    return `"${safe.replace(/"/g, '""')}"`
+  }
+  return safe
 }
 
 export async function exportNotesForSource(sourceId: string, sourceName: string): Promise<number> {
