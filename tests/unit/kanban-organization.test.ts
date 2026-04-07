@@ -1,43 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { organizeNotesIntoColumns } from '@/lib/kanban'
 import type { Note, KanbanBoardConfig } from '@/lib/types'
-
-// Extract the organization logic for testing
-function organizeNotesIntoColumns(
-  notes: Note[],
-  config: KanbanBoardConfig
-): Map<string, Note[]> {
-  const columnMap = new Map<string, Note[]>()
-
-  config.columns.forEach(col => columnMap.set(col.id, []))
-
-  if (config.defaultColumn.visible) {
-    columnMap.set('__default__', [])
-  }
-
-  const columnTags = new Set(config.columns.map(col => col.tag))
-
-  for (const note of notes) {
-    const noteTags = note.tags.split(',').map(t => t.trim()).filter(Boolean)
-
-    let assigned = false
-    for (const column of [...config.columns].sort((a, b) => a.order - b.order)) {
-      if (noteTags.includes(column.tag)) {
-        columnMap.get(column.id)!.push(note)
-        assigned = true
-        break
-      }
-    }
-
-    if (!assigned && config.defaultColumn.visible) {
-      const hasColumnTag = noteTags.some(tag => columnTags.has(tag))
-      if (!hasColumnTag) {
-        columnMap.get('__default__')!.push(note)
-      }
-    }
-  }
-
-  return columnMap
-}
 
 const createNote = (id: string, tags: string): Note => ({
   id,

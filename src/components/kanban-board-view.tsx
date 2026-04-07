@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { KanbanColumn } from '@/components/kanban-column'
 import { KanbanColumnSkeleton } from '@/components/kanban-column-skeleton'
 import { KanbanNoteCard } from '@/components/kanban-note-card'
+import { organizeNotesIntoColumns } from '@/lib/kanban'
 import type { Note, KanbanBoardConfig } from '@/lib/types'
 
 interface KanbanBoardViewProps {
@@ -26,49 +27,6 @@ interface KanbanBoardViewProps {
   onUpdateNote: (noteId: string, tags: string) => void
   onAddNote: (tag: string) => void
   isLoading?: boolean
-}
-
-function organizeNotesIntoColumns(
-  notes: Note[],
-  config: KanbanBoardConfig
-): Map<string, Note[]> {
-  const columnMap = new Map<string, Note[]>()
-
-  // Initialize all configured columns
-  config.columns.forEach(col => columnMap.set(col.id, []))
-
-  // Initialize default column if visible
-  if (config.defaultColumn.visible) {
-    columnMap.set('__default__', [])
-  }
-
-  // Get all column tags for quick lookup
-  const columnTags = new Set(config.columns.map(col => col.tag))
-
-  for (const note of notes) {
-    const noteTags = (note.tags || '').split(',').map(t => t.trim()).filter(Boolean)
-
-    // Find first matching column by order
-    let assigned = false
-    for (const column of [...config.columns].sort((a, b) => a.order - b.order)) {
-      if (noteTags.includes(column.tag)) {
-        columnMap.get(column.id)!.push(note)
-        assigned = true
-        break
-      }
-    }
-
-    // If no match and default column visible, check if note has any column tags
-    // If it doesn't have any column tags, add to default
-    if (!assigned && config.defaultColumn.visible) {
-      const hasColumnTag = noteTags.some(tag => columnTags.has(tag))
-      if (!hasColumnTag) {
-        columnMap.get('__default__')!.push(note)
-      }
-    }
-  }
-
-  return columnMap
 }
 
 export function KanbanBoardView({ notes, config, onNoteClick, onOpenConfig, onUpdateNote, onAddNote, isLoading = false }: KanbanBoardViewProps) {
