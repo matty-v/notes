@@ -4,6 +4,7 @@ import { Spinner } from '@/components/ui/spinner'
 import type { NoteSource } from '@/lib/types'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
 import { exportNotesForSource } from '@/lib/csv-export'
+import { extractSpreadsheetId } from '@/lib/spreadsheet-id'
 import { toast } from '@/hooks/use-toast'
 
 interface SourceManagerProps {
@@ -101,8 +102,8 @@ export function SourceManager({
               <input
                 type="text"
                 value={editSpreadsheetId}
-                onChange={(e) => setEditSpreadsheetId(e.target.value)}
-                placeholder="Spreadsheet ID"
+                onChange={(e) => setEditSpreadsheetId(extractSpreadsheetId(e.target.value))}
+                placeholder="Spreadsheet ID or full URL"
                 className="w-full px-3 py-2 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] text-sm text-foreground focus:outline-none focus:border-[var(--accent-cyan)] transition-all duration-300"
               />
               <div className="flex gap-2">
@@ -178,8 +179,8 @@ export function SourceManager({
           <input
             type="text"
             value={newSpreadsheetId}
-            onChange={(e) => setNewSpreadsheetId(e.target.value)}
-            placeholder="Google Sheet ID"
+            onChange={(e) => setNewSpreadsheetId(extractSpreadsheetId(e.target.value))}
+            placeholder="Google Sheet ID or full URL"
             className="w-full px-3 py-2 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] text-sm text-foreground focus:outline-none focus:border-[var(--accent-cyan)] transition-all duration-300"
           />
           <p className="text-xs text-muted-foreground font-light">

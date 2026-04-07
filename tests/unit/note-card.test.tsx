@@ -133,4 +133,71 @@ it('should render with grid variant', () => {
       expect(Array.from(links).some((l) => l.href.includes('two.com'))).toBe(true)
     })
   })
+
+  // Regression coverage for the markdown XSS fix shipped in commit
+  // 4afc738 (P0-1). The custom marked renderer.link previously interpolated
+  // hrefs verbatim, allowing [click](javascript:alert(1)) to render a
+  // working javascript: link. sanitizeHref now allows only http/https/
+  // mailto/relative schemes; everything else renders as plain text.
+  describe('XSS protection in markdown links', () => {
+    it('should not render javascript: links from markdown', () => {
+      const noteWithXss = createMockNote({
+        content: '[click me](javascript:alert(1))',
+      })
+      const { container } = renderWithQueryClient(
+        <NoteCard note={noteWithXss} onOpenModal={mockOnOpenModal} />
+      )
+
+      // No anchor tag should reference javascript: at all
+      const allLinks = container.querySelectorAll('a')
+      Array.from(allLinks).forEach((l) => {
+        expect(l.href.toLowerCase()).not.toContain('javascript:')
+      })
+      // The label still appears as plain text
+      expect(container.textContent).toContain('click me')
+    })
+
+    it('should not render data: URI links from markdown', () => {
+      const noteWithData = createMockNote({
+        content: '[evil](data:text/html,<script>alert(1)</script>)',
+      })
+      const { container } = renderWithQueryClient(
+        <NoteCard note={noteWithData} onOpenModal={mockOnOpenModal} />
+      )
+
+      const allLinks = container.querySelectorAll('a')
+      Array.from(allLinks).forEach((l) => {
+        expect(l.href.toLowerCase()).not.toContain('data:')
+      })
+      expect(container.textContent).toContain('evil')
+    })
+
+    it('should not render vbscript: links from markdown', () => {
+      const noteWithVbs = createMockNote({
+        content: '[bad](vbscript:msgbox)',
+      })
+      const { container } = renderWithQueryClient(
+        <NoteCard note={noteWithVbs} onOpenModal={mockOnOpenModal} />
+      )
+
+      const allLinks = container.querySelectorAll('a')
+      Array.from(allLinks).forEach((l) => {
+        expect(l.href.toLowerCase()).not.toContain('vbscript:')
+      })
+      expect(container.textContent).toContain('bad')
+    })
+
+    it('should still allow http and https links', () => {
+      const noteWithSafe = createMockNote({
+        content: '[safe](https://example.com)',
+      })
+      const { container } = renderWithQueryClient(
+        <NoteCard note={noteWithSafe} onOpenModal={mockOnOpenModal} />
+      )
+
+      const link = container.querySelector('a[href*="example.com"]') as HTMLAnchorElement
+      expect(link).toBeInTheDocument()
+      expect(link.href).toContain('https://example.com')
+    })
+  })
 })

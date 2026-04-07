@@ -24,6 +24,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Lint is informational for now: there are ~25 pre-existing
+      # @typescript-eslint/no-explicit-any errors in test files. Cleaning
+      # them up is its own follow-up; until then, surface them in the run
+      # log without blocking the deploy.
+      - name: Lint (informational)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Unit tests
+        run: npm run test
+
       - name: Build
         run: npm run build
 

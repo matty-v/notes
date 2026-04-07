@@ -32,7 +32,9 @@ export function useVoiceRecording(options: VoiceRecordingOptions = {}): VoiceRec
 
   // Check browser support
   useEffect(() => {
-    const SpeechRecognitionAPI = window.SpeechRecognition || (window as any).webkitSpeechRecognition
+    const SpeechRecognitionAPI =
+      window.SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition
     if (SpeechRecognitionAPI) {
       setIsSupported(true)
       recognitionRef.current = new SpeechRecognitionAPI()
@@ -53,14 +55,10 @@ export function useVoiceRecording(options: VoiceRecordingOptions = {}): VoiceRec
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       let finalTranscript = ''
-      let interimTranscript = ''
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcriptPiece = event.results[i][0].transcript
         if (event.results[i].isFinal) {
-          finalTranscript += transcriptPiece + ' '
-        } else {
-          interimTranscript += transcriptPiece
+          finalTranscript += event.results[i][0].transcript + ' '
         }
       }
 

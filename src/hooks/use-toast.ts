@@ -158,6 +158,12 @@ function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
+    // Subscribe this component's setState to the global listener list once
+    // on mount, unsubscribe once on unmount. The previous `[state]` deps
+    // (inherited from the upstream shadcn/ui template — see
+    // https://github.com/shadcn-ui/ui/issues/1797) caused the effect to
+    // re-run on every state change, removing and re-adding the same
+    // listener for no reason.
     listeners.push(setState)
     return () => {
       const index = listeners.indexOf(setState)
@@ -165,7 +171,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, [])
 
   return {
     ...state,

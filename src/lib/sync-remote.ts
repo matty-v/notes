@@ -1,5 +1,10 @@
 import { getNotesSheet } from './notes-api'
-import { getRowIndex, setRowIndex, deleteRowIndex } from './row-index-cache'
+import {
+  getRowIndex,
+  setRowIndex,
+  deleteRowIndex,
+  shiftAfterDelete,
+} from './row-index-cache'
 import type { Note } from './types'
 
 /**
@@ -9,7 +14,7 @@ async function resolveRowIndex(
   noteId: string,
   spreadsheetId: string
 ): Promise<number> {
-  const cached = getRowIndex(noteId)
+  const cached = getRowIndex(spreadsheetId, noteId)
   if (cached !== undefined) return cached
 
   const notesSheet = getNotesSheet(spreadsheetId)
@@ -20,7 +25,7 @@ async function resolveRowIndex(
     throw new Error('Note not found in remote sheet')
   }
   const rowIndex = index + 2
-  setRowIndex(noteId, rowIndex)
+  setRowIndex(spreadsheetId, noteId, rowIndex)
   return rowIndex
 }
 
@@ -35,7 +40,7 @@ export async function syncCreateToRemote(
   const notesSheet = getNotesSheet(spreadsheetId)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = await notesSheet.createRow(note as any)
-  setRowIndex(note.id, result.rowIndex)
+  setRowIndex(spreadsheetId, note.id, result.rowIndex)
   return { rowIndex: result.rowIndex }
 }
 
@@ -53,7 +58,18 @@ export async function syncUpdateToRemote(
 }
 
 /**
- * Sync a soft-deleted note to Google Sheets.
+ * Sync a deletion to Google Sheets.
+ *
+ * IMPORTANT: We hard-delete the row instead of soft-deleting via
+ * updateRow({...note, deletedAt}). The sheets-db-api `updateRow` reads the
+ * existing column headers and silently drops any field whose key is not
+ * already a header — and the default SHEETS_CONFIG does not include a
+ * `deletedAt` column. A soft delete via updateRow therefore writes the same
+ * row back unchanged, and the note resurrects on the next refresh.
+ *
+ * Hard deletion via deleteRow removes the row entirely; the local IndexedDB
+ * cache already filters by deletedAt at read time and is overwritten on the
+ * next refreshCacheFromRemote, so no UI churn.
  */
 export async function syncDeleteToRemote(
   deletedNote: Note,
@@ -61,7 +77,10 @@ export async function syncDeleteToRemote(
 ): Promise<void> {
   const rowIndex = await resolveRowIndex(deletedNote.id, spreadsheetId)
   const notesSheet = getNotesSheet(spreadsheetId)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await notesSheet.updateRow(rowIndex, deletedNote as any)
-  deleteRowIndex(deletedNote.id)
+  await notesSheet.deleteRow(rowIndex)
+  deleteRowIndex(spreadsheetId, deletedNote.id)
+  // The deleted row's successors all shifted up by one in the sheet — keep
+  // any cached entries for the same spreadsheet in sync so subsequent
+  // updates don't target stale row indices.
+  shiftAfterDelete(spreadsheetId, rowIndex)
 }

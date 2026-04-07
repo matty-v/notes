@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { LOCAL_STORAGE_KEYS } from '@/config/constants'
+import { db } from '@/lib/db'
+import { populateFromRows } from '@/lib/row-index-cache'
 import type { NoteSource } from '@/lib/types'
 
 function generateId(): string {
@@ -94,7 +96,24 @@ export function useSources() {
     })
   }, [])
 
-  const removeSource = useCallback((id: string) => {
+  const removeSource = useCallback(async (id: string) => {
+    // Look up the source's spreadsheetId before we drop it from state so we
+    // can clean up the row-index cache for the right key prefix.
+    const source = getSources().find((s) => s.id === id)
+
+    // Drop the locally cached notes for this source. Without this, the
+    // notes survive in IndexedDB invisibly (use-notes filters by sourceId
+    // at read time) — both a disk leak and a privacy concern, since a user
+    // who removes a source expects their data to be gone.
+    await db.notes.where('sourceId').equals(id).delete()
+
+    // Drop any row-index-cache entries for this spreadsheet. Re-using
+    // populateFromRows with an empty array clears the matching prefix
+    // without nuking other spreadsheets' entries.
+    if (source?.spreadsheetId) {
+      populateFromRows(source.spreadsheetId, [])
+    }
+
     setSourcesState((prev) => {
       const updated = prev.filter((s) => s.id !== id)
       saveSources(updated)
