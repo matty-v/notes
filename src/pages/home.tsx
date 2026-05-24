@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, RefreshCw } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Plus, RefreshCw } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { NoteCard } from '@/components/note-card'
 import { NoteCardSkeleton } from '@/components/note-card-skeleton'
 import { NoteModal } from '@/components/note-modal'
 import { CreateNoteModal } from '@/components/create-note-modal'
-import { TagFilter } from '@/components/tag-filter'
+import { FilterToolbar } from '@/components/filter-toolbar'
+import { FilterChipStrip } from '@/components/filter-chip-strip'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { SourceSelector } from '@/components/source-selector'
 import { ViewModeToggle } from '@/components/view-mode-toggle'
@@ -21,11 +21,12 @@ import { useViewMode } from '@/hooks/use-view-mode'
 import { useKanbanConfig } from '@/hooks/use-kanban-config'
 import { toast } from '@/hooks/use-toast'
 import { refreshCacheFromRemote } from '@/lib/cache'
-import type { Note } from '@/lib/types'
+import type { Note, SortOrder } from '@/lib/types'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [tagFilter, setTagFilter] = useState<string[]>([])
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -50,7 +51,7 @@ export function HomePage() {
   const { notes, isLoading, createNote, updateNote, deleteNote } = useNotes({
     search,
     tagFilter,
-    sortOrder: 'newest',
+    sortOrder,
     sourceId: activeSource?.id,
     spreadsheetId: activeSource?.spreadsheetId,
   })
@@ -201,17 +202,17 @@ export function HomePage() {
         </div>
       </div>
 
-      {/* Search and sort controls */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search notes..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+      {/* Filter toolbar */}
+      <div className="flex items-center gap-2 mb-2">
+        <FilterToolbar
+          search={search}
+          onSearchChange={setSearch}
+          tagFilter={tagFilter}
+          onTagFilterChange={setTagFilter}
+          sortOrder={sortOrder}
+          onSortChange={setSortOrder}
+          sourceId={activeSource?.id}
+        />
         <ViewModeToggle
           value={viewMode}
           onChange={setViewMode}
@@ -219,9 +220,16 @@ export function HomePage() {
         />
       </div>
 
-      <div className="mb-4">
-        <TagFilter selected={tagFilter} onChange={setTagFilter} sourceId={activeSource?.id} />
-      </div>
+      {/* Active filter chip strip */}
+      {tagFilter.length > 0 && (
+        <div className="mb-3">
+          <FilterChipStrip
+            tagFilter={tagFilter}
+            onRemoveTag={(tag) => setTagFilter(tagFilter.filter((t) => t !== tag))}
+            onClearAll={() => setTagFilter([])}
+          />
+        </div>
+      )}
 
       {isInitialLoad ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3">
@@ -237,11 +245,21 @@ export function HomePage() {
               ))}
             </div>
           ) : notes.length === 0 ? (
-            <p className="text-center text-muted-foreground font-light py-8">
-              {search || tagFilter.length > 0
-                ? 'No notes match your filters'
-                : 'No notes yet. Create your first note above!'}
-            </p>
+            <div className="text-center py-8">
+              {search || tagFilter.length > 0 ? (
+                <>
+                  <p className="text-muted-foreground font-light mb-2">No notes match your filters</p>
+                  <button
+                    onClick={() => { setSearch(''); setTagFilter([]) }}
+                    className="text-sm text-[var(--accent-cyan)] hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </>
+              ) : (
+                <p className="text-muted-foreground font-light">No notes yet. Create your first note above!</p>
+              )}
+            </div>
           ) : (
             <div
               style={{
@@ -283,11 +301,21 @@ export function HomePage() {
               ))}
             </div>
           ) : notes.length === 0 ? (
-            <p className="text-center text-muted-foreground font-light py-8">
-              {search || tagFilter.length > 0
-                ? 'No notes match your filters'
-                : 'No notes yet. Create your first note above!'}
-            </p>
+            <div className="text-center py-8">
+              {search || tagFilter.length > 0 ? (
+                <>
+                  <p className="text-muted-foreground font-light mb-2">No notes match your filters</p>
+                  <button
+                    onClick={() => { setSearch(''); setTagFilter([]) }}
+                    className="text-sm text-[var(--accent-cyan)] hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </>
+              ) : (
+                <p className="text-muted-foreground font-light">No notes yet. Create your first note above!</p>
+              )}
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-3">
               {notes.map((note) => (

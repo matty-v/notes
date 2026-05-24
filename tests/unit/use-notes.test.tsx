@@ -138,6 +138,50 @@ describe('useNotes', () => {
     expect(dbNote?.deletedAt).toBeDefined()
   })
 
+  it('should sort notes alphabetically by title when sortOrder is alphabetical', async () => {
+    await db.notes.bulkAdd([
+      {
+        id: 'note-z',
+        sourceId: 'test-source',
+        title: 'Zebra note',
+        content: '',
+        tags: '',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'note-a',
+        sourceId: 'test-source',
+        title: 'Apple note',
+        content: '',
+        tags: '',
+        createdAt: '2024-01-02T00:00:00.000Z',
+        updatedAt: '2024-01-02T00:00:00.000Z',
+      },
+      {
+        id: 'note-m',
+        sourceId: 'test-source',
+        title: 'Mango note',
+        content: '',
+        tags: '',
+        createdAt: '2024-01-03T00:00:00.000Z',
+        updatedAt: '2024-01-03T00:00:00.000Z',
+      },
+    ])
+
+    const { result } = renderHook(
+      () => useNotes({ sortOrder: 'alphabetical', sourceId: 'test-source' }),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await waitFor(() => expect(result.current.notes).toHaveLength(3))
+
+    expect(result.current.notes[0].title).toBe('Apple note')
+    expect(result.current.notes[1].title).toBe('Mango note')
+    expect(result.current.notes[2].title).toBe('Zebra note')
+  })
+
   it('should throw error when creating note without spreadsheetId', async () => {
     const { result } = renderHook(() => useNotes({}), {
       wrapper: createWrapper(),
