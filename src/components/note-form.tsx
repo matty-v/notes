@@ -31,6 +31,7 @@ export function NoteForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formKey, setFormKey] = useState(0)
   const pendingTagRef = useRef('')
+  const escapeTabRef = useRef(false)
 
   const { isListening, transcript, error: voiceError, isSupported, startListening, stopListening, resetTranscript } = useVoiceRecording()
   const { suggest, suggestion, isLoading: isSuggesting, error: suggestError, clear: clearSuggestions } = useAISuggestions()
@@ -81,6 +82,51 @@ export function NoteForm({
     setTags(merged)
   }
 
+  const handleContentKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Escape') {
+      escapeTabRef.current = true
+      return
+    }
+
+    if (e.key !== 'Tab') {
+      escapeTabRef.current = false
+      return
+    }
+
+    if (escapeTabRef.current) {
+      escapeTabRef.current = false
+      return
+    }
+
+    e.preventDefault()
+
+    const textarea = e.currentTarget
+    const { value, selectionStart, selectionEnd } = textarea
+
+    if (selectionStart === selectionEnd) {
+      if (e.shiftKey) {
+        const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
+        const lineText = value.slice(lineStart)
+        const removed = lineText.match(/^ {1,2}/)?.[0] ?? ''
+        setContent(value.slice(0, lineStart) + value.slice(lineStart + removed.length))
+      } else {
+        setContent(value.slice(0, selectionStart) + '  ' + value.slice(selectionEnd))
+      }
+    } else {
+      const lines = value.split('\n')
+      let charPos = 0
+      const newLines = lines.map((line) => {
+        const lineStart = charPos
+        const lineEnd = charPos + line.length
+        charPos = lineEnd + 1
+        const overlaps = lineEnd >= selectionStart && lineStart < selectionEnd
+        if (!overlaps) return line
+        return e.shiftKey ? line.replace(/^ {1,2}/, '') : '  ' + line
+      })
+      setContent(newLines.join('\n'))
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() && !content.trim()) return
@@ -129,6 +175,7 @@ export function NoteForm({
           placeholder="Write your note... (supports Markdown)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleContentKeyDown}
           className="w-full min-h-[200px] px-3 py-2 pr-12 rounded-lg bg-[rgba(18,24,33,0.5)] border border-[rgba(100,150,255,0.2)] text-foreground text-sm resize-vertical focus:outline-none focus:border-[var(--accent-cyan)] focus:shadow-[0_0_20px_rgba(0,212,255,0.1)] placeholder:text-muted-foreground transition-all duration-300"
         />
         <div className="absolute right-2 top-2 flex flex-col gap-1">

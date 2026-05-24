@@ -67,12 +67,19 @@ renderer.code = ({ text }) => {
   return `<pre class="bg-[rgba(0,0,0,0.3)] p-3 rounded-lg overflow-x-auto mb-3"><code class="text-sm font-mono">${escapeHtml(text)}</code></pre>`
 }
 
-// Override lists
-renderer.list = ({ items, ordered }) => {
+// Override lists — delegate per-item rendering to listitem so nested lists recurse correctly
+renderer.list = ({ items, ordered, start }) => {
   const tag = ordered ? 'ol' : 'ul'
-  const itemsHtml = items.map((item) => `<li class="${ordered ? '' : 'ml-4'}">${item.text}</li>`).join('')
+  const startAttr = ordered && (start as number) !== 1 ? ` start="${start}"` : ''
   const className = ordered ? 'list-decimal ml-5 mb-3' : 'list-disc ml-5 mb-3'
-  return `<${tag} class="${className}">${itemsHtml}</${tag}>`
+  const itemsHtml = items.map((item) => renderer.listitem(item)).join('')
+  return `<${tag}${startAttr} class="${className}">${itemsHtml}</${tag}>`
+}
+
+// Render each list item's tokens via the parser so nested list tokens go back through renderer.list
+renderer.listitem = (item) => {
+  const inner = renderer.parser.parse(item.tokens)
+  return `<li class="ml-4">${inner}</li>`
 }
 
 marked.setOptions({
