@@ -243,4 +243,41 @@ describe('NoteForm - Tab/Shift-Tab indentation', () => {
     fireEvent.keyDown(textarea, { key: 'Tab', code: 'Tab' })
     expect(textarea.value).toBe('  - item')
   })
+
+  it('Tab restores cursor to selectionStart + 2 after re-render', () => {
+    const textarea = setup()
+    setValueAndCaret(textarea, '- item', 0, 0)
+    fireEvent.keyDown(textarea, { key: 'Tab', code: 'Tab' })
+    expect(textarea.value).toBe('  - item')
+    expect(textarea.selectionStart).toBe(2)
+    expect(textarea.selectionEnd).toBe(2)
+  })
+
+  it('Tab mid-string restores cursor to selectionStart + 2', () => {
+    const textarea = setup()
+    // 'helloworld' has no space — inserting at position 5 gives 'hello  world'
+    setValueAndCaret(textarea, 'helloworld', 5, 5)
+    fireEvent.keyDown(textarea, { key: 'Tab', code: 'Tab' })
+    expect(textarea.value).toBe('hello  world')
+    expect(textarea.selectionStart).toBe(7)
+    expect(textarea.selectionEnd).toBe(7)
+  })
+
+  it('Shift-Tab restores cursor accounting for removed spaces', () => {
+    const textarea = setup()
+    setValueAndCaret(textarea, '  - item', 4, 4)
+    fireEvent.keyDown(textarea, { key: 'Tab', code: 'Tab', shiftKey: true })
+    expect(textarea.value).toBe('- item')
+    expect(textarea.selectionStart).toBe(2)
+    expect(textarea.selectionEnd).toBe(2)
+  })
+
+  it('Shift-Tab clamps cursor to line start when it was inside removed spaces', () => {
+    const textarea = setup()
+    setValueAndCaret(textarea, '  - item', 1, 1)
+    fireEvent.keyDown(textarea, { key: 'Tab', code: 'Tab', shiftKey: true })
+    expect(textarea.value).toBe('- item')
+    expect(textarea.selectionStart).toBe(0)
+    expect(textarea.selectionEnd).toBe(0)
+  })
 })

@@ -80,4 +80,22 @@ describe('renderMarkdown - nested list rendering', () => {
     expect(nestedUl).toBeInTheDocument()
     expect(nestedUl!.children).toHaveLength(2)
   })
+
+  it('ordered list <li> items do not have ml-4 class (backward compat)', () => {
+    const md = '1. first\n2. second\n3. third'
+    const { container } = render(<>{renderMarkdown(md)}</>)
+    const ol = container.querySelector('ol')!
+    Array.from(ol.children).forEach((li) => {
+      expect(li).not.toHaveClass('ml-4')
+    })
+  })
+
+  it('unordered list <li> items retain ml-4 class', () => {
+    const md = '- alpha\n- beta'
+    const { container } = render(<>{renderMarkdown(md)}</>)
+    const ul = container.querySelector('ul')!
+    Array.from(ul.children).forEach((li) => {
+      expect(li).toHaveClass('ml-4')
+    })
+  })
 })

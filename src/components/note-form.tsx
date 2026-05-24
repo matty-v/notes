@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { Mic, MicOff, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
@@ -32,6 +32,16 @@ export function NoteForm({
   const [formKey, setFormKey] = useState(0)
   const pendingTagRef = useRef('')
   const escapeTabRef = useRef(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const pendingSelectionRef = useRef<{ start: number; end: number } | null>(null)
+
+  useLayoutEffect(() => {
+    if (pendingSelectionRef.current !== null && textareaRef.current) {
+      const { start, end } = pendingSelectionRef.current
+      pendingSelectionRef.current = null
+      textareaRef.current.setSelectionRange(start, end)
+    }
+  })
 
   const { isListening, transcript, error: voiceError, isSupported, startListening, stopListening, resetTranscript } = useVoiceRecording()
   const { suggest, suggestion, isLoading: isSuggesting, error: suggestError, clear: clearSuggestions } = useAISuggestions()
@@ -109,21 +119,45 @@ export function NoteForm({
         const lineText = value.slice(lineStart)
         const removed = lineText.match(/^ {1,2}/)?.[0] ?? ''
         setContent(value.slice(0, lineStart) + value.slice(lineStart + removed.length))
+        const newPos = Math.max(lineStart, selectionStart - removed.length)
+        pendingSelectionRef.current = { start: newPos, end: newPos }
       } else {
         setContent(value.slice(0, selectionStart) + '  ' + value.slice(selectionEnd))
+        const newPos = selectionStart + 2
+        pendingSelectionRef.current = { start: newPos, end: newPos }
       }
     } else {
       const lines = value.split('\n')
       let charPos = 0
+      let deltaBeforeStart = 0
+      let totalDelta = 0
       const newLines = lines.map((line) => {
         const lineStart = charPos
         const lineEnd = charPos + line.length
         charPos = lineEnd + 1
         const overlaps = lineEnd >= selectionStart && lineStart < selectionEnd
         if (!overlaps) return line
-        return e.shiftKey ? line.replace(/^ {1,2}/, '') : '  ' + line
+        if (e.shiftKey) {
+          const removed = line.match(/^ {1,2}/)?.[0] ?? ''
+          const removedLen = removed.length
+          if (lineStart + removedLen <= selectionStart) {
+            deltaBeforeStart -= removedLen
+          } else if (lineStart <= selectionStart) {
+            deltaBeforeStart -= (selectionStart - lineStart)
+          }
+          totalDelta -= removedLen
+          return line.slice(removedLen)
+        } else {
+          if (lineStart <= selectionStart) deltaBeforeStart += 2
+          totalDelta += 2
+          return '  ' + line
+        }
       })
       setContent(newLines.join('\n'))
+      pendingSelectionRef.current = {
+        start: Math.max(0, selectionStart + deltaBeforeStart),
+        end: Math.max(0, selectionEnd + totalDelta),
+      }
     }
   }
 
@@ -172,6 +206,7 @@ export function NoteForm({
       />
       <div className="relative">
         <textarea
+          ref={textareaRef}
           placeholder="Write your note... (supports Markdown)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
