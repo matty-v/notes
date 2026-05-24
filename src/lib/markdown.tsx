@@ -43,9 +43,11 @@ renderer.link = ({ href, text }) => {
   return `<a href="${escapeHtml(safeHref)}" target="_blank" rel="noopener noreferrer" class="text-[var(--accent-cyan)] hover:text-[var(--accent-purple)] underline underline-offset-2 transition-colors">${text}</a>`
 }
 
-// Override paragraph to add proper spacing
-renderer.paragraph = ({ text }) => {
-  return `<p class="mb-3">${text}</p>`
+// Override paragraph to add proper spacing.
+// Must use renderer.parser.parseInline(tokens) — not `text` — so that inline tokens
+// (including <br> from breaks:true) are rendered rather than passed through as raw text.
+renderer.paragraph = ({ tokens }) => {
+  return `<p class="mb-3">${renderer.parser.parseInline(tokens)}</p>`
 }
 
 // Override headings for styling
@@ -82,8 +84,19 @@ renderer.list = ({ items, ordered, start }) => {
 
 marked.setOptions({
   renderer,
-  breaks: true, // Convert \n to <br>
-  gfm: false, // Disable GFM to prevent auto-linking URLs (we handle that with regex)
+  breaks: true,
+  gfm: true, // Required for `breaks` to convert \n to <br>; URL auto-linking suppressed below
+})
+
+// Suppress GFM's URL auto-linker — our regex pass in renderMarkdown() handles linkification.
+// Returning undefined (not false) makes the wrapped tokenizer skip this token type entirely;
+// false would fall through to the original GFM tokenizer.
+marked.use({
+  tokenizer: {
+    url() {
+      return undefined
+    },
+  },
 })
 
 function escapeHtml(text: string): string {

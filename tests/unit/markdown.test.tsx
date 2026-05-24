@@ -2,6 +2,33 @@ import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import { renderMarkdown } from '@/lib/markdown'
 
+describe('renderMarkdown - single-newline soft breaks', () => {
+  it('renders single newlines as <br>', () => {
+    const { container } = render(<>{renderMarkdown('line one\nline two\nline three')}</>)
+    const brs = container.querySelectorAll('br')
+    expect(brs.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('renders double newlines as separate paragraphs', () => {
+    const { container } = render(<>{renderMarkdown('para one\n\npara two')}</>)
+    const paragraphs = container.querySelectorAll('p')
+    expect(paragraphs).toHaveLength(2)
+  })
+
+  it('linkifies plain URLs exactly once (no double-linking from GFM + regex)', () => {
+    const { container } = render(<>{renderMarkdown('Visit https://example.com today')}</>)
+    const links = container.querySelectorAll('a')
+    expect(links).toHaveLength(1)
+    expect(links[0]).toHaveAttribute('href', 'https://example.com')
+  })
+
+  it('rejects javascript: URLs in markdown links', () => {
+    const { container } = render(<>{renderMarkdown('[click](javascript:alert(1))')}</>)
+    const links = container.querySelectorAll('a')
+    expect(links).toHaveLength(0)
+  })
+})
+
 describe('renderMarkdown - nested list rendering', () => {
   it('renders depth-1 nesting: parent with indented children', () => {
     const md = '- parent\n  - child A\n  - child B'
