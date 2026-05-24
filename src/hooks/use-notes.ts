@@ -60,11 +60,15 @@ export function useNotes(options: UseNotesOptions = {}) {
         })
       }
 
-      results.sort((a, b) => {
-        const dateA = new Date(a.createdAt).getTime()
-        const dateB = new Date(b.createdAt).getTime()
-        return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
-      })
+      if (sortOrder === 'alphabetical') {
+        results.sort((a, b) => a.title.localeCompare(b.title))
+      } else {
+        results.sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime()
+          const dateB = new Date(b.createdAt).getTime()
+          return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
+        })
+      }
 
       return results
     },

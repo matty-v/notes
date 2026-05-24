@@ -15,7 +15,7 @@ export interface NoteSource {
   spreadsheetId: string
 }
 
-export type SortOrder = 'newest' | 'oldest'
+export type SortOrder = 'newest' | 'oldest' | 'alphabetical'
 
 export type ViewMode = 'list' | 'grid' | 'kanban'
 
